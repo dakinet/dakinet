@@ -1,0 +1,4 @@
+apollo-loop-driver/hardware/pcb/freerouting.log
+apollo-loop-driver/hardware/pcb/*.ses
+apollo-loop-driver/hardware/pcb/*-bak
+__pycache__/
