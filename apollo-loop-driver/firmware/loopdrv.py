@@ -71,6 +71,8 @@ class Drajver:
         self.en_n = Pin(C.PIN_EN_N, Pin.OUT, value=1)       # petlja ugasena
         self.nivo = Pin(C.PIN_NIVO, Pin.OUT, value=1)       # osnovni nivo
         self.bit = Pin(C.PIN_BIT, Pin.IN)
+        self.oc_rst = Pin(C.PIN_OC_RST, Pin.OUT, value=1)    # zastita obrisana dok petlja ne krene
+        self.oc_flag = Pin(C.PIN_OC_FLAG, Pin.IN)
         self.adc_i = ADC(C.ADC_IAMP)
         self.adc_v = ADC(C.ADC_VLOOP)
         self.adc_r = ADC(C.ADC_VRET)
@@ -89,6 +91,10 @@ class Drajver:
     def _zastita(self, _t):
         if not self.ukljucena:
             return
+        if self.oc_flag.value():
+            # hardver (U12 + Q6) je vec ugasio petlju za nekoliko us; ovde samo belezimo kvar
+            self.iskljuci("kratak spoj ili preopterecenje > %.0f mA" % C.I_MAX_MA)
+            return
         v = _v_iz_adc(self.adc_v.read_u16(), C.DIV_V)
         if v < C.V_MIN_PETLJE:
             self._nisko += 1
@@ -100,10 +106,13 @@ class Drajver:
     def ukljuci(self):
         self.greska = None
         self._nisko = -50                 # 50 ms da se izlaz podigne
+        self.oc_rst.value(1)              # obrisi zadrsku zastite
         self.nivo.value(1)
         self.en_n.value(0)
         self.ukljucena = True
-        time.sleep_ms(100)
+        time.sleep_ms(C.OC_BLANK_MS)      # kapacitet petlje se puni kroz ogranicenje Q4 (~540 mA)
+        self.oc_rst.value(0)              # hardverska zastita aktivna
+        time.sleep_ms(100 - C.OC_BLANK_MS)
         s = self.status()
         if s["i_ma"] > C.I_MAX_MA:
             self.iskljuci("struja mirovanja %.1f mA > %.0f mA" % (s["i_ma"], C.I_MAX_MA))
@@ -111,16 +120,21 @@ class Drajver:
 
     def iskljuci(self, razlog=None):
         self.en_n.value(1)
+        self.oc_rst.value(1)
         self.ukljucena = False
         if razlog:
             self.greska = razlog
 
     def status(self):
+        v = _v_iz_adc(self._sr(self.adc_v), C.DIV_V)
+        r = _v_iz_adc(self._sr(self.adc_r), C.DIV_V)
         return {
             "ukljucena": self.ukljucena,
-            "v_petlje": round(_v_iz_adc(self._sr(self.adc_v), C.DIV_V), 2),
-            "v_povratak": round(_v_iz_adc(self._sr(self.adc_r), C.DIV_V), 2),
+            "v_petlje": round(v, 2),
+            "v_povratak": round(r, 2),
             "i_ma": round(_ma_iz_adc(self._sr(self.adc_i)), 2),
+            "kratak_spoj": bool(self.oc_flag.value()),
+            "prekid_petlje": self.ukljucena and r < C.PREKID_ODNOS * v,
             "greska": self.greska,
         }
 

@@ -8,6 +8,8 @@ PIN_NIVO = 2      # 1 = osnovni nivo 24 V, 0 = impuls 31 V (Q2 na listu 2)
 PIN_EN_N = 3      # 0 = petlja ukljucena, 1 = ugasena (R18 je pull-up)
 PIN_BIT = 4       # izlaz komparatora: 1 = strujni impuls uredjaja
 PIN_PRAG = 16     # PWM prag komparatora (RC filter R20/C9)
+PIN_OC_RST = 5    # 1 = brise/blokira hardversku zastitu (Q7), 0 = zastita aktivna
+PIN_OC_FLAG = 6   # 1 = hardverska zastita je okinula (> ~500 mA), petlja je ugasena (Q6)
 ADC_IAMP = 0      # GP26: struja petlje (1 ohm x 6,1)
 ADC_VLOOP = 1     # GP27: napon izlaza petlje (/11)
 ADC_VRET = 2      # GP28: napon na povratku petlje (/11)
@@ -16,13 +18,15 @@ ADC_VRET = 2      # GP28: napon na povratku petlje (/11)
 VREF = 3.3
 DIV_V = 11.0             # delitelji R10/R11 i R12/R13: 100k / 10k
 SHUNT_OHM = 1.0
-IAMP_GAIN = 6.1            # 1 + 51k/10k
+IAMP_GAIN = 5.02           # 1 + 40k2/10k; 500 mA -> 2,51 V
 PRAG_IZNAD_MA = 10.0     # prag komparatora = struja mirovanja + 10 mA
 
 # --- Zastita ---
 V_MIN_PETLJE = 18.0      # ispod ovoga (duze od V_MIN_MS) petlja se gasi
 V_MIN_MS = 2
-I_MAX_MA = 500.0         # iznad ovoga u mirovanju petlja se gasi
+I_MAX_MA = 500.0         # hardverski prag (U12, R33/R34 = 2,48 V) i softverska provera
+OC_BLANK_MS = 20         # posle ukljucenja: punjenje kapaciteta petlje, zastita blokirana
+PREKID_ODNOS = 0.5       # povratak petlje ispod 50 % izlaza = prekid linije
 
 # --- XP95 okvir (patent US8428153) ---
 T_RESET = 1500           # reset impuls

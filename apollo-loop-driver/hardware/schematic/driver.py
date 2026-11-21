@@ -37,7 +37,7 @@ with schemdraw.Drawing(file='driver.svg', show=False) as d:
     d.add(elm.Vdd().down().label('+3V3', loc='bottom'))
     # opamp, + on top
     op = d.add(elm.Opamp(leads=True).right().flip().anchor('in2').at((xop, y0)))
-    d.add(elm.Label().at((op.center[0]+0.2, op.center[1]-2.4)).label('U4 OPA197\nV+ = +34 V, V− = GND'))
+    d.add(elm.Label().at((op.center[0]+0.2, op.center[1]-2.4)).label('U4 OPA197\nV+ = +34 V (C13 100n, C58 1µ), V− = GND'))
     yo = op.out[1]
     d.add(elm.Resistor().right(3).at(op.out).label('R6  1k0', loc='top'))
     NB = d.here
@@ -69,6 +69,7 @@ with schemdraw.Drawing(file='driver.svg', show=False) as d:
     NV = (NO[0]+2.2, NO[1]); d.add(elm.Dot().at(NV))
     d.add(elm.Resistor().down(2.2).at(NV).label('R10\n100k', loc='bottom')); NVD = d.here; d.add(elm.Dot())
     d.add(elm.Resistor().down(1.8).label('R11\n10k0', loc='bottom')); gnd(d, d.here)
+    d.add(elm.Line().left(1.3).at(NVD)); d.add(elm.Capacitor().down(1.8).label('C59\n1n', loc='bottom')); gnd(d, d.here)
     d.add(elm.Line().right(1.0).at(NVD)); d.add(elm.Tag(width=2.9).right().label('VLOOP  GP27'))
     # return terminal + loop in
     yb = NO[1]-7.2

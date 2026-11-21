@@ -62,22 +62,31 @@ def uvezi_ses(b, path):
 uvezi_ses(b, 'apollo_loop_driver.ses')
 
 gnd = b.FindNet('GND')
-for layer in (pcbnew.F_Cu, pcbnew.B_Cu):
+gnd_usb = b.FindNet('GND_USB')
+GLAVNA = [(130, 100.5), (229.5, 100.5), (229.5, 194.5), (100.5, 194.5), (100.5, 129.5), (130, 129.5)]
+USB = [(100.5, 100.5), (127.5, 100.5), (127.5, 127), (100.5, 127)]
+
+
+def zona(net, tacke, layer):
     z = pcbnew.ZONE(b)
     z.SetLayer(layer)
-    z.SetNet(gnd)
-    z.SetLocalClearance(MM(0.4))
-    z.SetMinThickness(MM(0.25))
+    z.SetNet(net)
+    z.SetLocalClearance(MM(0.3))
+    z.SetMinThickness(MM(0.2))
     z.SetPadConnection(pcbnew.ZONE_CONNECTION_THERMAL)
     z.SetIslandRemovalMode(pcbnew.ISLAND_REMOVAL_MODE_ALWAYS)
-    z.SetThermalReliefGap(MM(0.4))
-    z.SetThermalReliefSpokeWidth(MM(0.5))
+    z.SetThermalReliefGap(MM(0.3))
+    z.SetThermalReliefSpokeWidth(MM(0.4))
     o = z.Outline()
     o.NewOutline()
-    for x, y in [(100.5, 100.5), (219.5, 100.5), (219.5, 184.5), (100.5, 184.5)]:
+    for x, y in tacke:
         o.Append(MM(x), MM(y))
     b.Add(z)
 
+
+for layer in (pcbnew.F_Cu, pcbnew.B_Cu):
+    zona(gnd, GLAVNA, layer)
+    zona(gnd_usb, USB, layer)
 
 
 def slobodno(b, x, y, r):
@@ -94,8 +103,10 @@ def slobodno(b, x, y, r):
 
 # GND "šivenje" gornje i donje površine
 n = 0
-for x in range(104, 218, 5):
-    for y in range(103, 184, 5):
+for x in range(104, 229, 5):
+    for y in range(103, 194, 5):
+        if x < 132 and y < 131:
+            continue          # USB/izolovana zona i razmak
         if slobodno(b, x, y, 1.2):
             v = pcbnew.PCB_VIA(b)
             v.SetPosition(pcbnew.VECTOR2I(MM(x), MM(y)))
@@ -104,6 +115,38 @@ for x in range(104, 218, 5):
             v.SetNet(gnd)
             b.Add(v); n += 1
 print('GND via za šivenje:', n)
+
+# termalne via: tab LM2587 (U1) i centralni pad RP2040 (U9)
+fpd = {fp.GetReference(): fp for fp in b.GetFootprints()}
+tv = 0
+for ref, korak, nx, ny in [('U1', 2.2, 4, 4), ('U9', 1.0, 3, 3)]:
+    fp = fpd[ref]
+    ep = max((p for p in fp.Pads() if p.GetNetname() == 'GND'), key=lambda p: p.GetSize().x * p.GetSize().y)
+    cx, cy = pcbnew.ToMM(ep.GetPosition().x), pcbnew.ToMM(ep.GetPosition().y)
+    for i in range(nx):
+        for j in range(ny):
+            v = pcbnew.PCB_VIA(b)
+            v.SetPosition(pcbnew.VECTOR2I(MM(cx + (i - (nx - 1) / 2) * korak), MM(cy + (j - (ny - 1) / 2) * korak)))
+            v.SetDrill(MM(0.3)); v.SetWidth(MM(0.6))
+            v.SetLayerPair(pcbnew.F_Cu, pcbnew.B_Cu)
+            v.SetNet(gnd)
+            b.Add(v); tv += 1
+print('termalnih via:', tv)
+pcbnew.ZONE_FILLER(b).Fill(b.Zones())
+
+# ukloni GND via koje posle izlivanja nisu povezane na oba sloja, pa izlij ponovo
+zf = [z for z in b.Zones() if not z.GetIsRuleArea() and z.GetNetname() == 'GND' and z.GetLayer() == pcbnew.F_Cu]
+zb = [z for z in b.Zones() if not z.GetIsRuleArea() and z.GetNetname() == 'GND' and z.GetLayer() == pcbnew.B_Cu]
+ukl = 0
+for v in [t for t in b.GetTracks() if t.GetClass() == 'PCB_VIA' and t.GetNetname() == 'GND']:
+    p = v.GetPosition()
+    naF = any(z.HitTestFilledArea(pcbnew.F_Cu, p) for z in zf)
+    naB = any(z.HitTestFilledArea(pcbnew.B_Cu, p) for z in zb)
+    imaVod = any(t.GetClass() == 'PCB_TRACK' and t.GetNetname() == 'GND' and (t.GetStart() == p or t.GetEnd() == p) for t in b.GetTracks())
+    naPadu = any(pd.GetNetname() == 'GND' and pd.HitTest(p) for fp in b.GetFootprints() for pd in fp.Pads())
+    if not (naF and naB) and not imaVod and not naPadu:
+        b.Remove(v); ukl += 1
+print('uklonjeno nepovezanih via:', ukl)
 pcbnew.ZONE_FILLER(b).Fill(b.Zones())
 trk = [t for t in b.GetTracks() if t.GetClass() == 'PCB_TRACK']
 vias = [t for t in b.GetTracks() if t.GetClass() == 'PCB_VIA']

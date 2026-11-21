@@ -1,0 +1,16 @@
+(version 1)
+# Veci razmak za mreze do 34 V (IPC-2221 B2, spoljni sloj, 31-150 V: 0,6 mm)
+(rule "HV razmak"
+  (constraint clearance (min 0.6mm))
+  (condition "A.NetName == '+34V' || A.NetName == 'SW' || A.NetName == 'NE' || A.NetName == 'LOOP_DRV' || A.NetName == 'LOOP_OUT' || A.NetName == 'NB' || A.NetName == 'U4OUT' || A.NetName == 'LOOP_IN' || A.NetName == '+24V' || A.NetName == '+24V_IN' || A.NetName == 'VIN_F'"))
+# Galvanska izolacija USB strane
+(rule "USB izolacija"
+  (constraint clearance (min 2.0mm))
+  (condition "(A.NetName == 'GND_USB' || A.NetName == 'VBUS_USB' || A.NetName == 'USB_DP_C' || A.NetName == 'USB_DM_C' || A.NetName == 'VDD1') && (B.NetName != 'GND_USB' && B.NetName != 'VBUS_USB' && B.NetName != 'USB_DP_C' && B.NetName != 'USB_DM_C' && B.NetName != 'VDD1')"))
+# Sirine vodova prema struji (provera)
+(rule "boost sirina"
+  (constraint track_width (min 0.9mm))
+  (condition "A.NetName == '+24V_IN' || A.NetName == 'VIN_F' || A.NetName == '+24V' || A.NetName == 'SW'"))
+(rule "petlja sirina"
+  (constraint track_width (min 0.5mm))
+  (condition "A.NetName == '+34V' || A.NetName == 'NE' || A.NetName == 'LOOP_DRV' || A.NetName == 'LOOP_OUT' || A.NetName == 'ISENSE'"))
