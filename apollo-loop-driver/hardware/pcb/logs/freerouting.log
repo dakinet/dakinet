@@ -139,3 +139,81 @@ java.lang.NullPointerException: Cannot invoke "app.freerouting.management.Segmen
 2026-11-21 10:38:46.004 [Thread-22] INFO  Starting route optimization on 1 thread...
 2026-11-21 10:47:10.637 [Thread-22] INFO  Route optimization was completed in 8 minute(s) 24.63 seconds and it improved the design by ~51.73%.
 2026-11-21 10:47:10.655 [Thread-22] INFO  Saving 'apollo_loop_driver.ses'...
+2026-11-21 11:22:41.744 [main] INFO  Freerouting v1.9.0 (build-date: 2023-10-30)
+2026-11-21 11:22:41.808 [main] INFO  Settings were loaded from freerouting.json
+2026-11-21 11:22:42.843 [main] INFO  Opening 'apollo_loop_driver.dsn'...
+2026-11-21 11:23:04.782 [Thread-22] INFO  Starting auto-routing...
+2026-11-21 11:23:26.156 [Thread-22] WARN  There were only 14.65 changes in the last 20 passes, so it's very likely that autorouter can't improve the result much further. It is recommended to stop it and finish the board manually.
+2026-11-21 11:23:28.820 [Thread-22] WARN  There were only 11.90 changes in the last 40 passes, so it's very likely that autorouter can't improve the result much further. It is recommended to stop it and finish the board manually.
+2026-11-21 11:23:31.449 [Thread-22] WARN  There were only 11.80 changes in the last 60 passes, so it's very likely that autorouter can't improve the result much further. It is recommended to stop it and finish the board manually.
+2026-11-21 11:23:34.105 [Thread-22] WARN  There were only 11.70 changes in the last 80 passes, so it's very likely that autorouter can't improve the result much further. It is recommended to stop it and finish the board manually.
+2026-11-21 11:23:36.808 [Thread-22] WARN  There were only 11.66 changes in the last 100 passes, so it's very likely that autorouter can't improve the result much further. It is recommended to stop it and finish the board manually.
+2026-11-21 11:23:38.455 [Thread-22] INFO  Auto-routing was completed in 33.67 seconds.
+2026-11-21 11:23:38.556 [Thread-22] INFO  Starting route optimization on 1 thread...
+2026-11-21 11:23:46.643 [Thread-22] INFO  Route optimization was completed in 8.09 seconds.
+2026-11-21 11:23:46.656 [Thread-22] INFO  Saving 'apollo_loop_driver.ses'...
+2026-11-21 11:24:04.722 [main] INFO  Freerouting v1.9.0 (build-date: 2023-10-30)
+2026-11-21 11:24:04.770 [main] INFO  Settings were loaded from freerouting.json
+2026-11-21 11:24:05.791 [main] INFO  Opening 'apollo_loop_driver.dsn'...
+2026-11-21 11:24:27.326 [Thread-22] INFO  Starting auto-routing...
+2026-11-21 11:24:48.195 [Thread-22] WARN  There were only 14.65 changes in the last 20 passes, so it's very likely that autorouter can't improve the result much further. It is recommended to stop it and finish the board manually.
+2026-11-21 11:24:50.851 [Thread-22] WARN  There were only 11.90 changes in the last 40 passes, so it's very likely that autorouter can't improve the result much further. It is recommended to stop it and finish the board manually.
+2026-11-21 11:24:53.334 [Thread-22] WARN  There were only 11.80 changes in the last 60 passes, so it's very likely that autorouter can't improve the result much further. It is recommended to stop it and finish the board manually.
+2026-11-21 11:24:56.185 [Thread-22] WARN  There were only 11.70 changes in the last 80 passes, so it's very likely that autorouter can't improve the result much further. It is recommended to stop it and finish the board manually.
+2026-11-21 11:24:58.917 [Thread-22] WARN  There were only 11.66 changes in the last 100 passes, so it's very likely that autorouter can't improve the result much further. It is recommended to stop it and finish the board manually.
+2026-11-21 11:25:00.547 [Thread-22] INFO  Auto-routing was completed in 33.22 seconds.
+2026-11-21 11:25:00.648 [Thread-22] INFO  Starting route optimization on 1 thread...
+2026-11-21 11:25:09.493 [Thread-22] INFO  Route optimization was completed in 8.84 seconds.
+2026-11-21 11:25:09.512 [Thread-22] INFO  Saving 'apollo_loop_driver.ses'...
+2026-11-21 11:25:29.544 [main] INFO  Freerouting v1.9.0 (build-date: 2023-10-30)
+2026-11-21 11:25:29.596 [main] INFO  Settings were loaded from freerouting.json
+2026-11-21 11:25:29.597 [main] ERROR 
+No X11 DISPLAY variable was set,
+or no headful library support was found,
+but this program performed an operation which requires it.
+java.awt.HeadlessException: 
+No X11 DISPLAY variable was set,
+or no headful library support was found,
+but this program performed an operation which requires it.
+	at sun.awt.HeadlessToolkit.getScreenSize(HeadlessToolkit.java:186) ~[?:?]
+	at app.freerouting.gui.MainApplication.main(MainApplication.java:269) ~[fr.jar:unspecified]
+2026-11-21 11:25:29.611 [main] ERROR Exception in FRAnalytics.trackAnonymousAction: Cannot invoke "app.freerouting.management.SegmentClient.track(String, String, String, app.freerouting.management.segment.Properties)" because "app.freerouting.management.FRAnalytics.analytics" is null
+java.lang.NullPointerException: Cannot invoke "app.freerouting.management.SegmentClient.track(String, String, String, app.freerouting.management.segment.Properties)" because "app.freerouting.management.FRAnalytics.analytics" is null
+	at app.freerouting.management.FRAnalytics.trackAnonymousAction(FRAnalytics.java:139) [fr.jar:unspecified]
+	at app.freerouting.management.FRAnalytics.exceptionThrown(FRAnalytics.java:323) [fr.jar:unspecified]
+	at app.freerouting.gui.DefaultExceptionHandler.handleException(DefaultExceptionHandler.java:15) [fr.jar:unspecified]
+	at app.freerouting.gui.DefaultExceptionHandler.uncaughtException(DefaultExceptionHandler.java:29) [fr.jar:unspecified]
+	at java.lang.ThreadGroup.uncaughtException(ThreadGroup.java:695) [?:?]
+	at java.lang.ThreadGroup.uncaughtException(ThreadGroup.java:690) [?:?]
+	at java.lang.Thread.dispatchUncaughtException(Thread.java:2902) [?:?]
+2026-11-21 11:28:29.230 [main] INFO  Freerouting v1.9.0 (build-date: 2023-10-30)
+2026-11-21 11:28:29.279 [main] INFO  Settings were loaded from freerouting.json
+2026-11-21 11:28:30.297 [main] INFO  Opening 'apollo_loop_driver.dsn'...
+2026-11-21 11:28:51.715 [Thread-22] INFO  Starting auto-routing...
+2026-11-21 11:29:23.485 [Thread-22] WARN  There were only 16.70 changes in the last 20 passes, so it's very likely that autorouter can't improve the result much further. It is recommended to stop it and finish the board manually.
+2026-11-21 11:29:37.018 [Thread-22] WARN  There were only 10.82 changes in the last 40 passes, so it's very likely that autorouter can't improve the result much further. It is recommended to stop it and finish the board manually.
+2026-11-21 11:29:49.995 [Thread-22] WARN  There were only 9.40 changes in the last 60 passes, so it's very likely that autorouter can't improve the result much further. It is recommended to stop it and finish the board manually.
+2026-11-21 11:30:03.239 [Thread-22] WARN  There were only 8.68 changes in the last 80 passes, so it's very likely that autorouter can't improve the result much further. It is recommended to stop it and finish the board manually.
+2026-11-21 11:30:15.666 [Thread-22] WARN  There were only 8.21 changes in the last 100 passes, so it's very likely that autorouter can't improve the result much further. It is recommended to stop it and finish the board manually.
+2026-11-21 11:30:22.181 [Thread-22] INFO  Auto-routing was completed in 1 minute(s) 30.46 seconds.
+2026-11-21 11:30:22.282 [Thread-22] INFO  Starting route optimization on 1 thread...
+2026-11-21 11:30:31.930 [Thread-22] INFO  Route optimization was completed in 9.65 seconds.
+2026-11-21 11:30:31.946 [Thread-22] INFO  Saving 'apollo_loop_driver.ses'...
+2026-11-21 11:30:52.430 [main] INFO  Freerouting v1.9.0 (build-date: 2023-10-30)
+2026-11-21 11:30:52.484 [main] INFO  Settings were loaded from freerouting.json
+2026-11-21 11:30:53.506 [main] INFO  Opening 'apollo_loop_driver.dsn'...
+2026-11-21 11:31:15.276 [Thread-22] INFO  Starting auto-routing...
+2026-11-21 11:31:39.079 [Thread-22] INFO  Auto-routing was completed in 23.80 seconds.
+2026-11-21 11:31:39.180 [Thread-22] INFO  Starting route optimization on 1 thread...
+2026-11-21 11:31:48.147 [Thread-22] INFO  Route optimization was completed in 8.96 seconds.
+2026-11-21 11:31:48.163 [Thread-22] INFO  Saving 'apollo_loop_driver.ses'...
+2026-11-21 11:32:13.820 [main] INFO  Freerouting v1.9.0 (build-date: 2023-10-30)
+2026-11-21 11:32:13.877 [main] INFO  Settings were loaded from freerouting.json
+2026-11-21 11:32:14.905 [main] INFO  Opening 'apollo_loop_driver.dsn'...
+2026-11-21 11:32:36.481 [Thread-22] INFO  Starting auto-routing...
+2026-11-21 11:32:57.879 [Thread-22] INFO  Auto-routing was completed in 21.40 seconds.
+2026-11-21 11:32:57.980 [Thread-22] INFO  Starting route optimization on 1 thread...
+2026-11-21 11:33:08.011 [Thread-22] WARN  CalcFromSide: start corner was not found
+2026-11-21 11:33:13.774 [Thread-22] WARN  CalcFromSide: start corner was not found
+2026-11-21 11:42:32.547 [Thread-22] INFO  Route optimization was completed in 9 minute(s) 34.57 seconds and it improved the design by ~52.39%.
+2026-11-21 11:42:32.568 [Thread-22] INFO  Saving 'apollo_loop_driver.ses'...

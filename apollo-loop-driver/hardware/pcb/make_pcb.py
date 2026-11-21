@@ -125,8 +125,8 @@ P = {
     'Y1':  (('Crystal', 'Crystal_SMD_3225-4Pin_3.2x2.5mm'), 140, 179, 0, '12MHz',
             {'1': 'XIN', '2': 'GND', '3': 'XO', '4': 'GND'}),
     'R26': (R0603, 145, 176, 0, '1k', {'1': 'XOUT', '2': 'XO'}),
-    'C51': (C0603, 136, 183, 0, '15p', {'1': 'XIN', '2': 'GND'}),
-    'C52': (C0603, 144, 183, 0, '15p', {'1': 'XO', '2': 'GND'}),
+    'C51': (C0603, 136, 183, 0, '33p', {'1': 'XIN', '2': 'GND'}),
+    'C52': (C0603, 144, 183, 0, '33p', {'1': 'XO', '2': 'GND'}),
     'C40': (C0603, 134, 162, 90, '100n', {'1': '+3V3', '2': 'GND'}),
     'C41': (C0603, 146, 162, 90, '100n', {'1': '+3V3', '2': 'GND'}),
     'C42': (C0603, 147, 168, 90, '100n', {'1': '+3V3', '2': 'GND'}),
@@ -154,7 +154,7 @@ P = {
     'C58': (C1206, 0, 0, 0, '1u/50V', {'1': '+34V', '2': 'GND'}),
     'C59': (C0603, 0, 0, 0, '1n', {'1': 'VLOOP', '2': 'GND'}),
     'C60': (C0603, 0, 0, 0, '1n', {'1': 'VRET', '2': 'GND'}),
-    'C63': (C1206, 0, 0, 0, '10u/50V X7R', {'1': '+34V', '2': 'GND'}),   # VF uz katodu D1
+    'C63': (C1206, 0, 0, 0, '10u/50V', {'1': '+34V', '2': 'GND'}),   # VF uz katodu D1
     # ---- hladnjak za Q3 (polozen TO-220, zavrtanj M3 kroz tab i hladnjak)
     'HS1': (('Heatsink', 'Heatsink_AAVID_TV5G_TO220_Horizontal'), 0, 0, 0, 'Aavid TV5G', {}),
     # ---- hardverska zaštita od kratkog spoja (> ~500 mA), sa zadrškom (latch)
@@ -230,6 +230,32 @@ BLOKOVI = [
     ('7 DRAJVER PETLJE 34V', ['U4', 'C13', 'C58', 'R6', 'R8', 'C7', 'R9', 'Q3', 'HS1', 'Q4', 'R7']),
     ('8 IZLAZ I ZASTITA', ['F2', 'D2', 'R10', 'R11', 'C59', 'J2']),
     ('9 MERENJE STRUJE', ['R14', 'R15', 'C8', 'U5', 'C14', 'R17', 'R16', 'U6', 'C15', 'R20', 'C9', 'J3', 'R12', 'R13', 'C60']),
+]
+
+
+# Vodovi koje Freerouting sam ne nalazi: VLOOP od delitelja R10/R11 do ADC ulaza RP2040 (pin 39)
+# ide donjim slojem preko cele ploče. (mreža, [(sloj, x1, y1, x2, y2, širina)], [via])
+PREVODI = [
+    ('VLOOP',
+     [('F', 143.4375, 170.6, 144.2267, 170.6, 0.2), ('F', 144.2267, 170.6, 144.3959, 170.7692, 0.2),
+      ('B', 144.3959, 170.7692, 163.6351, 170.7692, 0.2), ('B', 163.6351, 170.7692, 188.3331, 146.0712, 0.2),
+      ('B', 188.3331, 146.0712, 208.8256, 146.0712, 0.2),
+      ('F', 208.8256, 146.0712, 208.9843, 145.9125, 0.2), ('F', 208.9843, 145.9125, 210.0, 145.9125, 0.2),
+      ('F', 210.0, 145.9125, 210.1375, 145.775, 0.2)],
+     [(144.3959, 170.7692), (208.8256, 146.0712)]),
+    # SWDIO od RP2040 (pin 25) do SWD konektora J6
+    ('SWDIO',
+     [('F', 141.4, 175.4375, 141.4, 176.104, 0.2), ('F', 141.4, 176.104, 141.8331, 176.5371, 0.2),
+      ('F', 141.8331, 176.5371, 141.8331, 176.9054, 0.2), ('F', 141.8331, 176.9054, 144.1657, 179.238, 0.2),
+      ('F', 144.1657, 179.238, 146.2373, 179.238, 0.2), ('F', 146.2373, 179.238, 155.9781, 188.9788, 0.2),
+      ('F', 155.9781, 188.9788, 155.9781, 190.0, 0.2), ('F', 155.9781, 190.0, 157.08, 190.0, 0.2)],
+     []),
+    # +3V3 na IOVDD pin 22 RP2040: kratak vod ispod kućišta do pina 23 (desna strana)
+    ('+3V3',
+     [('F', 140.2, 175.4375, 140.2, 174.967, 0.2), ('F', 140.2, 174.967, 140.4334, 174.7336, 0.2),
+      ('F', 140.4334, 174.7336, 140.8225, 174.7336, 0.2), ('F', 140.8225, 174.7336, 141.9774, 173.5787, 0.2),
+      ('F', 141.9774, 173.5787, 141.9774, 173.0, 0.2), ('F', 141.9774, 173.0, 143.4375, 173.0, 0.2)],
+     []),
 ]
 
 
@@ -378,6 +404,19 @@ def main():
         for x, y in [(cx - pol, cy - pol), (cx + pol, cy - pol), (cx + pol, cy + pol), (cx - pol, cy + pol)]:
             o.Append(MM(x), MM(y))
         b.Add(kz)
+
+    # unapred zadati vodovi (zaključani): Freerouting ih zaobilazi
+    for ime, segs, vias in PREVODI:
+        n = net(ime)
+        for lay, x1, y1, x2, y2, w in segs:
+            t = pcbnew.PCB_TRACK(b)
+            t.SetStart(pcbnew.VECTOR2I(MM(x1), MM(y1))); t.SetEnd(pcbnew.VECTOR2I(MM(x2), MM(y2)))
+            t.SetWidth(MM(w)); t.SetLayer(pcbnew.F_Cu if lay == 'F' else pcbnew.B_Cu)
+            t.SetNet(n); t.SetLocked(True); b.Add(t)
+        for x, y in vias:
+            v = pcbnew.PCB_VIA(b)
+            v.SetPosition(pcbnew.VECTOR2I(MM(x), MM(y))); v.SetDrill(MM(0.3)); v.SetWidth(MM(0.6))
+            v.SetLayerPair(pcbnew.F_Cu, pcbnew.B_Cu); v.SetNet(n); v.SetLocked(True); b.Add(v)
 
     ds.SetBoardThickness(MM(1.6))
     pcbnew.SaveBoard('apollo_loop_driver.kicad_pcb', b)

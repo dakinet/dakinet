@@ -38,6 +38,10 @@ def uvezi_ses(b, path):
     layers = {'F.Cu': pcbnew.F_Cu, 'B.Cu': pcbnew.B_Cu}
     pt = lambda x, y: pcbnew.VECTOR2I(MM(float(x) / res), MM(-float(y) / res))
     nt = nv = 0
+    # unapred zadati (zaključani) vodovi iz make_pcb.py vec postoje: ne dupliraj ih
+    kljuc = lambda lay, a, c: (lay,) + tuple(sorted([(round(a.x, -3), round(a.y, -3)), (round(c.x, -3), round(c.y, -3))]))
+    postoji = {kljuc(t.GetLayer(), t.GetStart(), t.GetEnd()) for t in b.GetTracks() if t.GetClass() == 'PCB_TRACK'}
+    postoji_via = {(round(t.GetPosition().x, -3), round(t.GetPosition().y, -3)) for t in b.GetTracks() if t.GetClass() == 'PCB_VIA'}
     for n in find(net_out, 'net'):
         net = b.FindNet(n[1])
         for w in find(n, 'wire'):
@@ -45,11 +49,16 @@ def uvezi_ses(b, path):
                 layer, width, xy = p[1], float(p[2]) / res, p[3:]
                 pts = [pt(xy[i], xy[i + 1]) for i in range(0, len(xy) - 1, 2)]
                 for a, c in zip(pts, pts[1:]):
+                    if kljuc(layers[layer], a, c) in postoji:
+                        continue
                     t = pcbnew.PCB_TRACK(b)
                     t.SetStart(a); t.SetEnd(c); t.SetWidth(MM(width))
                     t.SetLayer(layers[layer]); t.SetNet(net)
                     b.Add(t); nt += 1
         for v in find(n, 'via'):
+            q = pt(v[2], v[3])
+            if (round(q.x, -3), round(q.y, -3)) in postoji_via:
+                continue
             via = pcbnew.PCB_VIA(b)
             via.SetPosition(pt(v[2], v[3]))
             via.SetDrill(MM(0.3)); via.SetWidth(MM(0.6))

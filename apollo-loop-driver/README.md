@@ -51,6 +51,18 @@ RC filteri na ADC ulazima (VLOOP, VRET 1 nF, IAMP 1 kΩ/1 nF), PWM prag 10 kΩ/1
 ADuM3160 (SOIC-16W), RP2040 (QFN-56), W25Q16JV (SOIC-8 208 mil), AP2112K (SOT-23-5), REF3033, MCP6561,
 2N7002/BC847 i TIP122. Pločica je napravljena programski (`make_pcb.py`), bez KiCad šeme (.kicad_sch).
 
+## Narudžbina kod JLCPCB
+`python3.12 hardware/pcb/jlc.py` (posle `build.sh`) pravi:
+- `apollo_loop_driver_gerber.zip` – Gerber + drill za izradu pločice (2 sloja, 1,6 mm)
+- `BOM_JLC.csv` – sve stavke sa LCSC brojevima (kolone Comment, Designator, Footprint, LCSC Part #)
+- `CPL_JLC.csv` – pozicije delova (Designator, Mid X, Mid Y, Layer, Rotation)
+
+Zamene zbog JLC kataloga: L1 SRR1280-101M (isti otisak kao SRR1260, Isat 2,0 A, vršna struja ≈ 1,4 A),
+Q4 MMBT3904 umesto BC847, tasteri XKB TS-1187A, kondenzatori kristala 33 pF (kristal C9002, CL 20 pF).
+Hladnjak TV5G nije u katalogu – montira se ručno. Rotacije u CPL su KiCad-ove: proveri ih u JLC pregledu
+pre potvrde (najčešće treba okrenuti SOT-23, SOIC i QFN). USB-B10-BRW: pre narudžbine uporedi crtež
+otiska sa OST USB-B1HSxx. Malo na stanju: ADuM3160 i LM2587S-ADJ.
+
 ## Kratak spoj i prekid petlje
 - **Kratak spoj / preopterećenje:** šant R14 (1 Ω) meri struju petlje; kad pređe ≈ 500 mA, U12 okida za nekoliko µs,
   Q6 spušta VSET i petlja se gasi bez učešća procesora. D6/R36 drže stanje (latch) dok firmver ne pusti OC_RST.
