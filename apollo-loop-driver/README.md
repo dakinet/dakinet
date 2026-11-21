@@ -59,7 +59,7 @@ ADuM3160 (SOIC-16W), RP2040 (QFN-56), W25Q16JV (SOIC-8 208 mil), AP2112K (SOT-23
 
 Zamene zbog JLC kataloga: L1 SRR1280-101M (isti otisak kao SRR1260, Isat 2,0 A, vršna struja ≈ 1,4 A),
 Q4 MMBT3904 umesto BC847, tasteri XKB TS-1187A, kondenzatori kristala 33 pF (kristal C9002, CL 20 pF).
-Hladnjak TV5G nije u katalogu – montira se ručno. Rotacije u CPL su KiCad-ove: proveri ih u JLC pregledu
+Hladnjak TV5G nije u katalogu – montira se ručno. Montažne rupe H1–H4: Ø3,2 mm za M3, pometalisane sa prstenom 6,4 mm na obe strane, nisu povezane na masu (kućište ne sme da napravi zemljospoj kad je pločica na petlji centrale). Rotacije u CPL su KiCad-ove: proveri ih u JLC pregledu
 pre potvrde (najčešće treba okrenuti SOT-23, SOIC i QFN). USB-B10-BRW: pre narudžbine uporedi crtež
 otiska sa OST USB-B1HSxx. Malo na stanju: ADuM3160 i LM2587S-ADJ.
 

@@ -321,7 +321,7 @@ def main():
         d1.SetOrientationDegrees(d1.GetOrientationDegrees() + 180)
 
     for i, (x, y) in enumerate([(226, 104), (104, 191), (226, 191), (165, 191)]):
-        postavi('H%d' % (i + 1), ('MountingHole', 'MountingHole_3.2mm_M3'), x, y, 0, 'M3', {})
+        postavi('H%d' % (i + 1), ('MountingHole', 'MountingHole_3.2mm_M3_Pad'), x, y, 0, 'M3', {})
 
     # ivica ploče 120 x 85
     x0, y0, x1, y1 = 100, 100, 230, 195
