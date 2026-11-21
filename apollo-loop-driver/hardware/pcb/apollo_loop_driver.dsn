@@ -42,6 +42,7 @@
   )
   (placement
     (component MountingHole_3.2mm_M3_Pad
+      (place H5 104000.000000 -104000.000000 front 0.000000 (PN M3))
       (place H4 165000.000000 -191000.000000 front 0.000000 (PN M3))
       (place H3 226000.000000 -191000.000000 front 0.000000 (PN M3))
       (place H2 104000.000000 -191000.000000 front 0.000000 (PN M3))
@@ -222,7 +223,7 @@
       (place U8 130000.000000 -113000.000000 front 0.000000 (PN ADuM3160))
     )
     (component "USB_B_OST_USB-B1HSxx_Horizontal"
-      (place J5 115000.000000 -112000.000000 front 180.000000 (PN "USB-B"))
+      (place J5 115000.000000 -117500.000000 front 180.000000 (PN "USB-B"))
     )
   )
   (library
