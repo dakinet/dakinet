@@ -2,3 +2,7 @@ apollo-loop-driver/hardware/pcb/freerouting.log
 apollo-loop-driver/hardware/pcb/*.ses
 apollo-loop-driver/hardware/pcb/*-bak
 __pycache__/
+loopnet/child/hardware/pcb/*.ses
+loopnet/child/hardware/pcb/logs/
+loopnet/child/hardware/pcb/*-bak
+loopnet/child/hardware/pcb/*.kicad_prl

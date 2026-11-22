@@ -34,7 +34,7 @@ Uređaj je „LoopNet 1IN“ (`child/`): ATtiny1616, jedan ulaz sa EOL otpornici
 | Osnovni nivo (mirovanje, pauza) | 24,2 V na masteru |
 | Impuls master → uređaj | +7,0 V (31,2 V); uzlazna ivica 10–90 % ≈ 20 µs (VSET τ ≈ 9 µs), aktivno |
 | Silazna ivica | pasivna: pražnjenje kabla kroz opterećenje, t ≈ C·ΔU/I (§1.3) |
-| Potrošnja uređaja | **konstantna** I_CC = 180 µA nominalno (130–230 µA po primerku), ne zavisi od napona 15–31 V |
+| Potrošnja uređaja | **konstantna** I_CC ≈ 180 µA (165–200 µA za 0–50 °C: izvor Vbe/R sa dva NPN + delitelj prijema), ne zavisi od rada MCU-a; između 24 i 31 V raste ~3 µA |
 | Odgovor uređaj → master | dodatni strujni ponor **10 mA ±20 %** (konstantna struja, NPN + R_E) |
 | Najmanji napon na uređaju | 15 V u osnovnom nivou (14,3 V za vreme sopstvenog odgovora) |
 | Adrese | 1–126 radne; 0 = broadcast; 127 = nedodeljena (fabričko stanje) |
@@ -54,8 +54,10 @@ Uređaj je „LoopNet 1IN“ (`child/`): ATtiny1616, jedan ulaz sa EOL otpornici
 
 - Delitelj sa **obe žice pre mosta** (2 × 4,7 MΩ ka čvoru, 330 kΩ ka masi uređaja): čvor prati liniju bez obzira na polaritet i ne „pamti“
   vrh kao čvor iza mosta (kapacitet TVS-a iza mosta bi držao 31 V stotinama µs). Odnos ≈ 1/17, Thevenin ≈ 290 kΩ, τ ≈ 3 µs sa ulazom AC-a.
-- Komparator AC0 u ATtiny1616: + ulaz = delitelj, − ulaz = interni DAC0. Firmver meri osnovni nivo ADC-om na istom pinu
-  (svakih 10 ms, samo dok je linija na osnovnom nivou) i postavlja DAC na **osnovni nivo + 3,5 V** (korak ≈ 0,17 V linije), histerezis AC 25 mV ≈ 0,4 V linije.
+- Komparator AC0 u ATtiny1616 (PA7 = AINP0, PA6 = AINN0, low-power režim 45 µA): + ulaz = delitelj, − ulaz = kondenzator 10 nF na PA6
+  koji puni DAC0 (izlaz na PA6). Firmver svakih 10 ms meri osnovni nivo ADC-om na PA7 (samo dok je linija na osnovnom nivou),
+  na ~50 µs uključi DAC0 na **osnovni nivo + 3,5 V** (korak ≈ 0,17 V linije) i ponovo ga isključi – „sample-hold“, jer VREF + DAC
+  ne bi stali u budžet kad bi radili stalno. Histerezis AC 25 mV ≈ 0,4 V linije.
 - Zašto ne RC filter (analogni „usrednjeni nivo + ofset“): srednja vrednost linije zavisi od gustine impulsa (u okviru do ~35 % trajanja na 31 V)
   i od pada na kablu (osnovni nivo 15–24 V). Za prag fiksnog odnosa r = U_ref/U_ulaz uslovi „prag ≥ osnovni + 1,5 V pri 15 V bez saobraćaja“ i
   „prag ≤ osnovni + 5,5 V pri 26 V usred okvira“ daju r > 1,107 i r < 1,107 – nema rešenja. Merenje osnovnog nivoa ADC-om nema taj problem.
@@ -173,7 +175,7 @@ Ispravan uređaj daje tačno jedan impuls po paru. Master tumači:
 
 ### 6.1 Spavanje
 
-- Između okvira: STANDBY, rade samo AC0 (+ DAC/VREF) i RTC/PIT (10 ms za ulaz). Buđenje uzlaznom ivicom; ako linija posle 300 µs i dalje stoji na 31 V → START.
+- Između okvira: STANDBY, rade samo AC0 (low-power) i RTC/PIT (10 ms za ulaz i osvežavanje praga). Buđenje uzlaznom ivicom; ako linija posle 300 µs i dalje stoji na 31 V → START.
 - U okviru: IDLE, TCB meri periode hardverski; CPU se budi na svakoj uzlaznoj ivici zaglavlja.
 - SKEN/DOGAĐAJI: posle zaglavlja TCA0 broji uzlazne ivice (događaj iz AC0) do prozora 2N−2, CPU spava; budi se samo za svoj par.
 - Okvir koji nije za uređaj: CPU gasi buđenje i spava do procenjenog kraja okvira (K × T_W − 10 %), zatim ponovo čeka START.
@@ -190,7 +192,7 @@ Ispravan uređaj daje tačno jedan impuls po paru. Master tumači:
 | Stanje svih uređaja | ≈ 41 ms (SKEN) | ≈ 6–25 s |
 
 Potrošnja uređaja: struja sa linije je konstantna I_CC (izvor struje), a unutrašnja potrošnja mora biti manja od
-najmanjeg I_CC (130 µA); višak odlazi kroz Zener. Procena unutrašnje potrošnje je u `child/README.md`.
+najmanjeg I_CC (~160 µA kroz izvor pri 50 °C); višak odlazi kroz Zener. Procena unutrašnje potrošnje je u `child/README.md`.
 
 ## 8. Granice i rezerve
 
@@ -209,5 +211,5 @@ najmanjeg I_CC (130 µA); višak odlazi kroz Zener. Procena unutrašnje potrošn
 
 - Izmeriti I_CC po primerku (BSS126 V_GS(off) rasipanje) i unutrašnju potrošnju u svim režimima.
 - Izmeriti silaznu ivicu sa 10 uređaja na kolutu 500 m / 1 km sa i bez završnog otpornika; potvrditi pravilo I ≥ 0,04·C.
-- Da li AC0 + DAC/VREF u STANDBY-u ostaju u budžetu; alternativa: buđenje digitalnim pinom sa fiksnim pragom.
+- Pad napona na C4 (prag) između dva osvežavanja (curenje AC ulaza) i stvarna potrošnja AC0 u STANDBY-u.
 - CRC umesto parnosti u zaglavlju (greška obično pomera brojanje, što hvata provera perioda i par prozora).
