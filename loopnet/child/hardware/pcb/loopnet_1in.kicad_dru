@@ -1,0 +1,9 @@
+(version 1)
+# Mreze vezane za liniju (31 V radno, do 64 V pri stezanju TVS-a): 0,3 mm.
+# IPC-2221 B4 (spoljni sloj sa lakom/maskom, 31-100 V) trazi 0,13 mm; 0,3 mm je rezerva za JLC masku.
+(rule "linija razmak"
+  (constraint clearance (min 0.3mm))
+  (condition "A.NetName == 'LA' || A.NetName == 'LB' || A.NetName == 'VP' || A.NetName == 'QB' || A.NetName == 'QE'"))
+(rule "linija sirina"
+  (constraint track_width (min 0.3mm))
+  (condition "A.NetName == 'LA' || A.NetName == 'LB' || A.NetName == 'VP'"))
