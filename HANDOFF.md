@@ -59,3 +59,17 @@ Sledeći koraci:
 - jlcpcb.com, lcsc.com, microchip.com, nexperia, vishay, diodes su bili blokirani; ti.com i GitHub raw su radili.
   JLC Basic lista korišćena iz `cpldcpu/TouchSynth/parts/jlcpcb_basic_parts.csv` (može biti zastarela).
 - Freerouting ne poštuje razmak do ivice – zato pojas 0,35 mm (rule area) u `make_pcb.py`.
+
+## 5. Apollo modul – ručni tok završen (`apollo-loop-module/hardware/pcb_rucno/`, 22.11.2026)
+
+- Ploča 76×54 mm, 2 sloja, letvica 2×14 / 2,54 mm dole, centrirana na donjoj ivici (modul se utiče u matičnu ploču).
+- **DRC (kicad-cli): 0 grešaka, 0 nepovezanih padova.** Gerber + drill: `apollo_module_gerber.zip`; 3D: `pcb_gore.png`, `pcb_dole.png`.
+- Tok: `make_pcb.py` (raspored + ručni strujni putevi + `rucni_vodovi.py`) → `finish_pcb.py` (GND F/B, +34V ispod Q1,
+  šivenje 2 mm) → `ostrva.py` (via za odsečena ostrva mase) → DRC. Svaka izmena ide kroz `rucno_alat.primeni()`
+  (preklapanja + širine po netlisti + DRC, inače se vraća). Ruter/postavljač: `C:\Users\Filip\claude\PCB\tools\ruter` (van repoa).
+- RP2040 okrenut 90°, flash dole-levo: svih 6 QSPI na F.Cu bez via; zona 15×15 mm oko MCU samo za neophodne delove;
+  DVDD/IOVDD desno kroz tented via ispod tela (kao Pico); ostale strane ispod tela bez vodova.
+- Boost/buck po TI smernicama; analogni deo boost-a po redosledu pinova (COMP | FB | FREQ); dugi GPIO vodovi vraćeni
+  na F.Cu jer su na B.Cu sekli masu u ostrva.
+- **Proveriti pre narudžbine:** JLC BOM/CPL (`jlc.py` tabela LCSC još iz LoopNet-a – nije ažurirana), tented via ispod
+  RP2040 (JLC opcija „tented vias“), varijanta maske HTSSOP footprinta za TPS55340 (PWP0014A) – neprovereno.

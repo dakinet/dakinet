@@ -317,7 +317,7 @@ def primeni(poz=None, vodovi=None, opis=''):
     return True, b
 
 
-def ruter_korak(mreze, opis, gnd_refs=None, skupi_prstenovi=()):
+def ruter_korak(mreze, opis, gnd_refs=None, skupi_prstenovi=(), zabrane=()):
     """Moj ruter (tools/ruter/motor.py) na zadate mreže po mojim pravilima; svi NOVI vodovi i via se prepisuju u
     rucni_vodovi.py (zaključano) i prolaze zaštitu. gnd_refs: delovi čiji GND padovi dobijaju sopstvenu via."""
     sys.path.insert(0, os.path.join(OVDE, '../../../../tools/ruter'))
@@ -326,6 +326,9 @@ def ruter_korak(mreze, opis, gnd_refs=None, skupi_prstenovi=()):
     importlib.reload(rucni_vodovi)
     r = Ruter(os.path.join(OVDE, 'apollo_module.kicad_pcb'), pregled=URL, visoki=list(VISOKI))
     pre = {t.m_Uuid.AsString() for t in r.b.GetTracks()}
+    for (zx0, zy0, zx1, zy1) in zabrane:          # potpuna zabrana prolaska (oba sloja) samo za ovaj korak
+        (si, sj), _, _ = r._prozor(zx0, zy0, zx1, zy1)
+        r.zabrana[:, si, sj] = True
     for (ox0, oy0, ox1, oy1), (ix0, iy0, ix1, iy1), cena in skupi_prstenovi:   # skup prsten: kanal za signale oko čipa
         (si, sj), _, _ = r._prozor(ox0, oy0, ox1, oy1)
         r.cena_zona[:, si, sj] = cena

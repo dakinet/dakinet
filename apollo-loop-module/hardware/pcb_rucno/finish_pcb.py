@@ -70,8 +70,16 @@ for i in (-2, -1, 0, 1, 2):
         b.Add(v)
 
 
+ZABRANE_VIA = [z for z in b.Zones() if z.GetIsRuleArea() and z.GetDoNotAllowVias()]
+
+
 def slobodno(x, y, r):
     p = pcbnew.VECTOR2I(MM(x), MM(y))
+    if min(x - X0, X1 - x, y - Y0, Y1 - y) < 1.0:          # ne uz samu ivicu (traka 0,35 + razmak 0,3)
+        return False
+    for z in ZABRANE_VIA:                                     # nikad u zoni bez via
+        if z.Outline().Contains(p) or z.Outline().Collide(p, MM(r)):
+            return False
     box = pcbnew.BOX2I(pcbnew.VECTOR2I(MM(x - r), MM(y - r)), pcbnew.VECTOR2I(MM(2 * r), MM(2 * r)))
     for fp in b.GetFootprints():
         c = fp.GetCourtyard(pcbnew.F_CrtYd)
@@ -85,9 +93,9 @@ def slobodno(x, y, r):
 
 
 n = 0
-for i in range(0, int(X1 - X0) - 1):
-    for j in range(0, int(Y1 - Y0) - 1):
-        x, y = X0 + 1.0 + i * 1.0, Y0 + 0.8 + j * 1.0
+for i in range(0, int((X1 - X0) / 2.0)):          # šivenje na mreži 2 mm (dovoljno za 2 sloja, bez šume via)
+    for j in range(0, int((Y1 - Y0) / 2.0)):
+        x, y = X0 + 1.5 + i * 2.0, Y0 + 1.3 + j * 2.0
         if slobodno(x, y, 0.55):
             v = pcbnew.PCB_VIA(b)
             v.SetPosition(pcbnew.VECTOR2I(MM(x), MM(y)))
@@ -107,7 +115,33 @@ for v in [t for t in b.GetTracks() if t.GetClass() == 'PCB_VIA' and t.GetNetname
     if not (naF and naB) and not imaVod and not naPadu:
         b.Remove(v); ukl += 1
 pcbnew.ZONE_FILLER(b).Fill(b.Zones())
-print('GND via za šivenje:', n, 'uklonjeno nepovezanih:', ukl)
+# ostrva: svaki deo GND površine bez via dobija via (ako ima slobodno mesto), pa ponovo izlivanje
+ostrva = 0
+gnd_via = [t.GetPosition() for t in b.GetTracks() if t.GetClass() == 'PCB_VIA' and t.GetNetname() == 'GND']
+for z in [z for z in b.Zones() if not z.GetIsRuleArea() and z.GetNetname() == 'GND']:
+    lay = z.GetLayer()
+    poly = z.GetFilledPolysList(lay)
+    for oi in range(poly.OutlineCount()):
+        jedan = pcbnew.SHAPE_POLY_SET()
+        jedan.AddOutline(poly.Outline(oi))
+        if any(jedan.Contains(v) for v in gnd_via):
+            continue
+        bb = poly.Outline(oi).BBox()
+        nadjeno = False
+        xx = pcbnew.ToMM(bb.GetLeft())
+        while xx < pcbnew.ToMM(bb.GetRight()) and not nadjeno:
+            yy = pcbnew.ToMM(bb.GetTop())
+            while yy < pcbnew.ToMM(bb.GetBottom()) and not nadjeno:
+                pt = pcbnew.VECTOR2I(MM(xx), MM(yy))
+                if jedan.Contains(pt) and slobodno(xx, yy, 0.55):
+                    v = pcbnew.PCB_VIA(b)
+                    v.SetPosition(pt); v.SetDrill(MM(0.3)); v.SetWidth(MM(0.6))
+                    v.SetLayerPair(pcbnew.F_Cu, pcbnew.B_Cu); v.SetNet(gnd)
+                    b.Add(v); gnd_via.append(pt); ostrva += 1; nadjeno = True
+                yy += 0.25
+            xx += 0.25
+pcbnew.ZONE_FILLER(b).Fill(b.Zones())
+print('GND via za šivenje:', n, 'uklonjeno nepovezanih:', ukl, 'via za ostrva:', ostrva)
 print('vodova:', len([t for t in b.GetTracks() if t.GetClass() == 'PCB_TRACK']),
       'via:', len([t for t in b.GetTracks() if t.GetClass() == 'PCB_VIA']))
 pcbnew.SaveBoard(IME + '.kicad_pcb', b)
