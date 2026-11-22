@@ -71,7 +71,7 @@ aside p.note { color: var(--muted); margin: 0 0 12px; line-height: 1.45; font-si
   <aside>
     <h2>Raspored delova</h2>
     <p class="note">Klik na deo u listi ili na oznaku ističe ga na ploči. Prevuci mišem za okretanje, točkić za zum, desni taster za pomeranje.
-    U2 i SW1 nemaju svoj 3D model u KiCad 7 biblioteci: U2 je prikazan kao UQFN-20 3×3 (isto telo), a SW1 kao kvadar 5,1 × 5,1 mm.</p>
+    U2 i SW1 nemaju svoj 3D model u KiCad 7 biblioteci, pa su nacrtani ovde: U2 kao VQFN-20 3 × 3 × 0,9 mm (tačka = pin 1), SW1 kao kvadar 5,1 × 5,1 mm.</p>
     <div id="list"></div>
   </aside>
 </div>
@@ -184,6 +184,29 @@ renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, came
   telo.position.set(sw.x, sw.y, 1.6 + 0.75); scene.add(telo);
   const dug = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 0.6, 32), new THREE.MeshStandardMaterial({ color: 0x8a8f93, roughness: .5 }));
   dug.rotation.x = Math.PI / 2; dug.position.set(sw.x, sw.y, 1.6 + 1.5 + 0.3); scene.add(dug); }
+
+// U2 ATtiny1616 (VQFN-20 3 x 3 x 0,9 mm): KiCad 7 nema model, crta se ovde; natpis i tačka pina 1 (gore levo)
+{ const u = DELOVI.find(d => d.ref === 'U2');
+  const cv = document.createElement('canvas'); cv.width = cv.height = 256;
+  const g = cv.getContext('2d');
+  g.fillStyle = '#26292b'; g.fillRect(0, 0, 256, 256);
+  g.fillStyle = '#c9ced1'; g.font = '600 46px monospace'; g.textAlign = 'center';
+  g.fillText('ATtiny', 128, 118); g.fillText('1616', 128, 172);
+  g.font = '400 26px monospace'; g.fillStyle = '#9aa0a4'; g.fillText('MNR', 128, 212);
+  g.beginPath(); g.arc(34, 34, 14, 0, 2 * Math.PI); g.fillStyle = '#e8ecee'; g.fill();
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+  const bok = new THREE.MeshStandardMaterial({ color: 0x26292b, roughness: .6 });
+  const vrh = new THREE.MeshStandardMaterial({ map: tex, roughness: .6 });
+  const cip = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 0.9), [bok, bok, bok, bok, vrh, bok]);
+  cip.position.set(u.x, u.y, 1.6 + 0.45); scene.add(cip);
+  // izvodi: 4 strane x 5 pinova, korak 0,4 mm, kalaj vidljiv na ivici kućišta
+  const pinMat = new THREE.MeshStandardMaterial({ color: 0xc8ccce, metalness: .6, roughness: .35 });
+  for (let s = 0; s < 4; s++) for (let i = -2; i <= 2; i++) {
+    const pin = new THREE.Mesh(new THREE.BoxGeometry(s % 2 ? 0.2 : 0.06, s % 2 ? 0.06 : 0.2, 0.2), pinMat);
+    const o = i * 0.4;
+    const [px, py] = [[-1.5, -o], [o, -1.5], [1.5, o], [-o, 1.5]][s];
+    pin.position.set(u.x + px, u.y + py, 1.6 + 0.1); scene.add(pin);
+  } }
 
 new VRMLLoader().load('loopnet_1in.wrl.txt', (obj) => {
   scene.add(obj);
