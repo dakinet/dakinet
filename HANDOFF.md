@@ -29,6 +29,9 @@ Zahtevi (od korisnika): 24 V ulaz (21–28 V) + boost, petlja do 250 mA, samo UA
 Odluke (sve u docstring-u `hardware/pcb/make_pcb.py`, netlista `P` je kompletna):
 - Boost **TPS55340PWPR** (HTSSOP-14, pinovi iz TI datasheet-a): 34,4 V (R1 270k/R2 10k, Vref 1,229 V), ~580 kHz (R3 82k),
   L1 33 µH SRN6045, D2 SS210, C3/C4 10 µF/50 V + C5 100 µF/50 V, komp. R4 2k2 + C6 100n + C7 100p, SS 47n.
+- Pinovi U1/U2 potvrđeni po datasheet-u 22.11.2026: TPS55340 SLVSBD4E (sep 2021) tabela 5-1 HTSSOP-14,
+  TPS560430 SLVSE22B (jun 2018) Pin Functions DBV; X3F = fiksno 3,3 V, 1,1 MHz, FPWM (Device Comparison Table).
+  Pažnja: TPS55340 VIN/EN apsolutni max 34 V (preporučeno do 32 V), na ulazu nema TVS-a.
 - 3,3 V: **TPS560430X3FDBVR** (SOT-23-6: 1 CB, 2 GND, 3 FB=VOUT, 4 EN, 5 VIN, 6 SW), L2 15 µH SRN4018.
 - VSET iz 3,3 V (bez REF3033): R5 1k / R6 15k / R7 3k24 preko Q2 → 3,094 V (impuls) / 2,40 V (osnovni); Q3 gasi petlju.
 - Izlaz: OPA197 (×10,1: R11 91k / R12 10k) → R10 470 Ω → **MJD122** Darlington DPAK (izvor) + **MMBT5401** PNP (aktivni
