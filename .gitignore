@@ -6,3 +6,8 @@ loopnet/child/hardware/pcb/*.ses
 loopnet/child/hardware/pcb/logs/
 loopnet/child/hardware/pcb/*-bak
 loopnet/child/hardware/pcb/*.kicad_prl
+apollo-loop-module/hardware/pcb/*.ses
+apollo-loop-module/hardware/pcb/logs/
+apollo-loop-module/hardware/pcb/fr/
+apollo-loop-module/hardware/pcb/*-bak
+apollo-loop-module/hardware/pcb/*.kicad_prl

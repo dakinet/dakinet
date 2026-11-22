@@ -7,6 +7,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../
 import pcbnew
 MM = pcbnew.FromMM
 IME = 'apollo_module'
+from make_pcb import X0, Y0, X1, Y1, POZ  # dimenzije ploče (60 x 45 mm) iz izvora istine
 
 # uvezi_ses iz mastera (modul na uvozu odmah ucitava apollo plocu, pa se funkcija cita iz izvornog teksta)
 _src = open(os.path.join(sys.path[0], 'finish_pcb.py')).read()
@@ -22,14 +23,15 @@ uk = 0
 for t in [t for t in b.GetTracks() if t.GetClass() == 'PCB_TRACK' and t.GetNetname() == 'GND']:
     pts = [t.GetStart(), t.GetEnd()]
     w2 = pcbnew.ToMM(t.GetWidth()) / 2
-    if any(min(pcbnew.ToMM(q.x) - 100, 130 - pcbnew.ToMM(q.x), pcbnew.ToMM(q.y) - 100, 120 - pcbnew.ToMM(q.y)) - w2 < 0.35 for q in pts):
+    if any(min(pcbnew.ToMM(q.x) - X0, X1 - pcbnew.ToMM(q.x), pcbnew.ToMM(q.y) - Y0, Y1 - pcbnew.ToMM(q.y)) - w2 < 0.35 for q in pts):
         b.Remove(t); uk += 1
 print('GND vodova uz ivicu uklonjeno:', uk)
-OKVIR = [(100.25, 100.25), (129.75, 100.25), (129.75, 119.75), (100.25, 119.75)]
+OKVIR = [(X0 + 0.25, Y0 + 0.25), (X1 - 0.25, Y0 + 0.25), (X1 - 0.25, Y1 - 0.25), (X0 + 0.25, Y1 - 0.25)]
 
 
-def zona(net, tacke, layer):
+def zona(net, tacke, layer, prioritet=0):
     z = pcbnew.ZONE(b)
+    z.SetAssignedPriority(prioritet) if hasattr(z, 'SetAssignedPriority') else z.SetPriority(prioritet)
     z.SetLayer(layer)
     z.SetNet(net)
     z.SetLocalClearance(MM(0.25))
@@ -48,6 +50,22 @@ def zona(net, tacke, layer):
 for layer in (pcbnew.F_Cu, pcbnew.B_Cu):
     zona(gnd, OKVIR, layer)
 
+# Q1 (MJD122) hlađenje: +34V bakar ispod taba (kolektor) na oba sloja + termalne via kroz tab.
+# Disipacija (34 - 24,2) V x 150 mA ~ 1,5 W kontinualno -> treba površina na F i B sloju.
+qx, qy = POZ['Q1'][:2]
+tx, ty = qx + 1.26, qy            # centar taba (pad 2) u TO-252-2 footprintu
+HLAD = [(tx - 3.7, Y0 + 0.4), (min(tx + 4.3, X1 - 0.4), Y0 + 0.4), (min(tx + 4.3, X1 - 0.4), qy + 4.3), (tx - 3.7, qy + 4.3)]
+v34 = b.FindNet('+34V')
+for layer in (pcbnew.F_Cu, pcbnew.B_Cu):
+    zona(v34, HLAD, layer, prioritet=1)
+for i in (-2, -1, 0, 1, 2):
+    for j in (-1.6, 0, 1.6):
+        v = pcbnew.PCB_VIA(b)
+        v.SetPosition(pcbnew.VECTOR2I(MM(tx + 0.4 + i * 1.2), MM(ty + j)))
+        v.SetDrill(MM(0.3)); v.SetWidth(MM(0.6))
+        v.SetLayerPair(pcbnew.F_Cu, pcbnew.B_Cu); v.SetNet(v34)
+        b.Add(v)
+
 
 def slobodno(x, y, r):
     p = pcbnew.VECTOR2I(MM(x), MM(y))
@@ -64,9 +82,9 @@ def slobodno(x, y, r):
 
 
 n = 0
-for i in range(0, 30):
-    for j in range(0, 20):
-        x, y = 101.0 + i * 1.0, 100.8 + j * 1.0
+for i in range(0, int(X1 - X0) - 1):
+    for j in range(0, int(Y1 - Y0) - 1):
+        x, y = X0 + 1.0 + i * 1.0, Y0 + 0.8 + j * 1.0
         if slobodno(x, y, 0.55):
             v = pcbnew.PCB_VIA(b)
             v.SetPosition(pcbnew.VECTOR2I(MM(x), MM(y)))

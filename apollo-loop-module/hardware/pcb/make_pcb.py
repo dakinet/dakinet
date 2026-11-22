@@ -12,11 +12,15 @@ Raspored pinova proveren po datasheet-ovima (vidi ../../README.md):
   MJD122 (DPAK): 1 B, 2/tab C, 3 E;  MMBT5401 / MMBT3904 / 2N7002 (SOT-23): 1 B/G, 2 E/S, 3 C/D
   OPA197, MCP6002, MCP6561, RP2040, W25Q16JV: isti raspored kao u apollo-loop-driver (proveren tamo)
 """
+import os
 import sys
 sys.path.append('/usr/lib/python3/dist-packages')
 import pcbnew
 
-FP = '/usr/share/kicad/footprints/'
+# KiCad 7 na Linuxu ili KiCad 9/10 na Windows-u (KICAD_FOOTPRINTS menja putanju)
+FP = os.environ.get('KICAD_FOOTPRINTS') or next(
+    (d for d in ('/usr/share/kicad/footprints/', r'C:/Program Files/KiCad/10.0/share/kicad/footprints/')
+     if os.path.isdir(d)), '/usr/share/kicad/footprints/')
 MM = pcbnew.FromMM
 IME = 'apollo_module'
 
@@ -24,24 +28,32 @@ R0603 = ('Resistor_SMD', 'R_0603_1608Metric')
 R0805 = ('Resistor_SMD', 'R_0805_2012Metric')
 R2512 = ('Resistor_SMD', 'R_2512_6332Metric')
 C0603 = ('Capacitor_SMD', 'C_0603_1608Metric')
+C0402 = ('Capacitor_SMD', 'C_0402_1005Metric')   # blokada RP2040 (Hardware design with RP2040)
 C0805 = ('Capacitor_SMD', 'C_0805_2012Metric')
 C1210 = ('Capacitor_SMD', 'C_1210_3225Metric')
 SOT23 = ('Package_TO_SOT_SMD', 'SOT-23')
 SOT235 = ('Package_TO_SOT_SMD', 'SOT-23-5')
 SOIC8 = ('Package_SO', 'SOIC-8_3.9x4.9mm_P1.27mm')
 DSMA = ('Diode_SMD', 'D_SMA')
+# KiCad 7 i KiCad 9/10 imaju različita imena ova dva footprinta (TI PWP0014A; varijanta maske NEPROVERENA za TPS55340)
+_PSO = os.path.join(FP, 'Package_SO.pretty')
+# bez bibliotečkih termalnih via (0,2 mm rupe – JLC 2 sloja traži >= 0,3 mm); 6 via 0,3/0,6 mm u PowerPAD-u su u PREVODI
+HTSSOP14 = ('Texas_HTSSOP-14-1EP_4.4x5mm_P0.65mm_EP3.4x5mm_Mask3.155x3.255mm'
+            if os.path.exists(os.path.join(_PSO, 'Texas_HTSSOP-14-1EP_4.4x5mm_P0.65mm_EP3.4x5mm_Mask3.155x3.255mm.kicad_mod'))
+            else 'HTSSOP-14-1EP_4.4x5mm_P0.65mm_EP3.4x5mm_Mask3x3.1mm')
+SOIC8W = ('SOIC-8_5.3x5.3mm_P1.27mm' if os.path.exists(os.path.join(_PSO, 'SOIC-8_5.3x5.3mm_P1.27mm.kicad_mod'))
+          else 'SOIC-8_5.23x5.23mm_P1.27mm')
 TB2 = ('TerminalBlock_Phoenix', 'TerminalBlock_Phoenix_PT-1,5-2-3.5-H_1x02_P3.50mm_Horizontal')
 
 # ref: (biblioteka, vrednost, {pin: mreža})
 P = {
     # ---- ulaz 24 V
-    'J1': (TB2, '24V IN', {'1': '+24V_IN', '2': 'GND'}),
     'F1': (('Fuse', 'Fuse_1206_3216Metric'), '3A', {'1': '+24V_IN', '2': 'VIN_F'}),
     'D1': (DSMA, 'SS34', {'2': 'VIN_F', '1': 'VIN'}),
     'C1': (('Capacitor_SMD', 'CP_Elec_6.3x7.7'), '47u/50V', {'1': 'VIN', '2': 'GND'}),
     'C2': (C1210, '10u/50V', {'1': 'VIN', '2': 'GND'}),
     # ---- boost 34 V (TPS55340, ~580 kHz)
-    'U1': (('Package_SO', 'HTSSOP-14-1EP_4.4x5mm_P0.65mm_EP3.4x5mm_Mask3x3.1mm'), 'TPS55340PWPR',
+    'U1': (('Package_SO', HTSSOP14), 'TPS55340PWPR',
            {'1': 'SW', '2': 'SW', '3': 'VIN', '4': 'VIN', '5': 'SS', '6': 'GND', '7': 'GND', '8': 'COMP',
             '9': 'BFB', '10': 'FREQ', '11': 'GND', '12': 'GND', '13': 'GND', '14': 'GND', '15': 'GND'}),
     'L1': (('Inductor_SMD', 'L_Bourns_SRN6045TA'), '33uH SRN6045TA-330M', {'1': 'VIN', '2': 'SW'}),
@@ -56,14 +68,17 @@ P = {
     'C6': (C0603, '100n', {'1': 'CC', '2': 'GND'}),
     'C7': (C0603, '100p', {'1': 'COMP', '2': 'GND'}),
     'C8': (C0603, '47n', {'1': 'SS', '2': 'GND'}),
-    'C9': (C0603, '1u', {'1': 'VIN', '2': 'GND'}),
+    'C9': (C0603, '1u/50V', {'1': 'VIN', '2': 'GND'}),
+    'C35': (C0603, '100n/50V', {'1': 'VIN', '2': 'GND'}),     # VF bypass uz VIN pin (TI layout primer)
+    'C36': (C0603, '100n/50V', {'1': '+34V', '2': 'GND'}),    # VF kondenzator izlazne petlje D2 -> PGND
     # ---- 3,3 V buck (TPS560430X3F, fiksnih 3,3 V)
     'U2': (('Package_TO_SOT_SMD', 'SOT-23-6'), 'TPS560430X3FDBVR',
            {'1': 'CB', '2': 'GND', '3': '+3V3', '4': 'VIN', '5': 'VIN', '6': 'SW3'}),
     'C10': (C0603, '100n', {'1': 'CB', '2': 'SW3'}),
     'L2': (('Inductor_SMD', 'L_Bourns-SRN4018'), '15uH SRN4018-150M', {'1': 'SW3', '2': '+3V3'}),
     'C11': (C1210, '10u/50V', {'1': 'VIN', '2': 'GND'}),
-    'C12': (C0805, '10u', {'1': '+3V3', '2': 'GND'}),
+    'C37': (C0603, '100n/50V', {'1': 'VIN', '2': 'GND'}),     # CIN VF direktno između VIN (5) i GND (2)
+    'C12': (C0805, '22u/10V', {'1': '+3V3', '2': 'GND'}),     # TI tabela 1: COUT 22 uF za 3,3 V / 1,1 MHz
     'C13': (C0805, '10u', {'1': '+3V3', '2': 'GND'}),
     # ---- VSET: 3,3 V x 15k/16k = 3,094 V (impuls) ili x (15k||3k24)/... = 2,40 V (osnovni), Q3 gasi petlju
     'R5': (R0603, '1k', {'1': '+3V3', '2': 'VSET'}),
@@ -92,8 +107,6 @@ P = {
     'R15': (R0603, '100k', {'1': 'LOOP_OUT', '2': 'VLOOP'}),
     'R16': (R0603, '10k', {'1': 'VLOOP', '2': 'GND'}),
     'C17': (C0603, '1n', {'1': 'VLOOP', '2': 'GND'}),
-    'J2': (TB2, 'LOOP OUT', {'1': 'LOOP_OUT', '2': 'ISENSE'}),
-    'J3': (TB2, 'LOOP IN', {'1': 'LOOP_IN', '2': 'ISENSE'}),
     'R17': (R0603, '100k', {'1': 'LOOP_IN', '2': 'VRET'}),
     'R18': (R0603, '10k', {'1': 'VRET', '2': 'GND'}),
     'C18': (C0603, '1n', {'1': 'VRET', '2': 'GND'}),
@@ -105,12 +118,12 @@ P = {
     'C20': (C0603, '100n', {'1': '+3V3', '2': 'GND'}),
     'R21': (R0603, '10k', {'1': 'NM', '2': 'GND'}),
     'R22': (R0603, '40k2', {'1': 'NM', '2': 'IAMP'}),
-    'U5': (SOT235, 'MCP6561', {'1': 'BIT', '2': 'GND', '3': 'IAMP', '4': 'PRAG_F', '5': '+3V3'}),
+    'U5': (SOT235, 'MCP6561T-E/OT', {'1': 'BIT', '2': 'GND', '3': 'IAMP', '4': 'PRAG_F', '5': '+3V3'}),
     'C21': (C0603, '100n', {'1': '+3V3', '2': 'GND'}),
     'R23': (R0603, '10k', {'1': 'PRAG', '2': 'PRAG_F'}),
     'C22': (C0603, '1u', {'1': 'PRAG_F', '2': 'GND'}),
     # ---- zaštita od preopterećenja > ~285 mA sa zadrškom (kao kod mastera, prag 1,43 V)
-    'U6': (SOT235, 'MCP6561', {'1': 'OCP', '2': 'GND', '3': 'OC_IN', '4': 'OC_REF', '5': '+3V3'}),
+    'U6': (SOT235, 'MCP6561T-E/OT', {'1': 'OCP', '2': 'GND', '3': 'OC_IN', '4': 'OC_REF', '5': '+3V3'}),
     'C23': (C0603, '100n', {'1': '+3V3', '2': 'GND'}),
     'R24': (R0603, '13k', {'1': '+3V3', '2': 'OC_REF'}),
     'R25': (R0603, '10k', {'1': 'OC_REF', '2': 'GND'}),
@@ -129,89 +142,139 @@ P = {
             '24': 'SWCLK', '25': 'SWDIO', '26': 'RUN', '27': 'PRAG', '37': 'LED', '38': 'IAMP', '39': 'VLOOP',
             '40': 'VRET', '43': '+3V3', '44': '+3V3', '46': 'USB_DM', '47': 'USB_DP', '48': '+3V3',
             '51': 'QSD3', '52': 'QSCLK', '53': 'QSD0', '54': 'QSD2', '55': 'QSD1', '56': 'QSS', '57': 'GND'}),
-    'U8': (('Package_SO', 'SOIC-8_5.23x5.23mm_P1.27mm'), 'W25Q16JVSS',
+    'U8': (('Package_SO', SOIC8W), 'W25Q16JVSS',
            {'1': 'QSS', '2': 'QSD1', '3': 'QSD2', '4': 'GND', '5': 'QSD0', '6': 'QSCLK', '7': 'QSD3', '8': '+3V3'}),
     'C25': (C0603, '100n', {'1': '+3V3', '2': 'GND'}),
     'R29': (R0603, '10k', {'1': 'QSS', '2': '+3V3'}),
     'R30': (R0603, '1k', {'1': 'QSS', '2': 'BOOT'}),
     'R31': (R0603, '10k', {'1': 'RUN', '2': '+3V3'}),
-    'Y1': (('Crystal', 'Crystal_SMD_3225-4Pin_3.2x2.5mm'), '12MHz', {'1': 'XIN', '2': 'GND', '3': 'XO', '4': 'GND'}),
+    'Y1': (('Crystal', 'Crystal_SMD_3225-4Pin_3.2x2.5mm'), '12MHz ABM8-272-T3', {'1': 'XIN', '2': 'GND', '3': 'XO', '4': 'GND'}),
     'R32': (R0603, '1k', {'1': 'XOUT', '2': 'XO'}),
-    'C26': (C0603, '33p', {'1': 'XIN', '2': 'GND'}),
-    'C27': (C0603, '33p', {'1': 'XO', '2': 'GND'}),
-    'C28': (C0603, '100n', {'1': '+3V3', '2': 'GND'}),
-    'C29': (C0603, '100n', {'1': '+3V3', '2': 'GND'}),
-    'C30': (C0603, '100n', {'1': '+3V3', '2': 'GND'}),
-    'C31': (C0603, '100n', {'1': '+3V3', '2': 'GND'}),
-    'C32': (C0603, '1u', {'1': '+3V3', '2': 'GND'}),
-    'C33': (C0603, '100n', {'1': 'DVDD', '2': 'GND'}),
-    'C34': (C0603, '1u', {'1': 'DVDD', '2': 'GND'}),
+    'C26': (C0603, '15p', {'1': 'XIN', '2': 'GND'}),
+    'C27': (C0603, '15p', {'1': 'XO', '2': 'GND'}),
+    'C28': (C0402, '100n', {'1': '+3V3', '2': 'GND'}),       # IOVDD pin 10
+    'C29': (C0402, '100n', {'1': '+3V3', '2': 'GND'}),       # IOVDD pin 33
+    'C30': (C0402, '100n', {'1': '+3V3', '2': 'GND'}),       # USB_VDD 48 + IOVDD 49
+    'C31': (C0402, '100n', {'1': '+3V3', '2': 'GND'}),       # IOVDD pin 1
+    'C32': (C0402, '1u', {'1': '+3V3', '2': 'GND'}),         # VREG_VIN pin 44 (datasheet 2.10)
+    'C38': (C0402, '100n', {'1': '+3V3', '2': 'GND'}),       # IOVDD pin 42
+    'C39': (C0402, '100n', {'1': '+3V3', '2': 'GND'}),       # ADC_AVDD pin 43
+    'C40': (C0402, '100n', {'1': '+3V3', '2': 'GND'}),       # IOVDD pin 22
+    'C33': (C0402, '100n', {'1': 'DVDD', '2': 'GND'}),       # DVDD pin 50
+    'C41': (C0402, '100n', {'1': 'DVDD', '2': 'GND'}),       # DVDD pin 23
+    'C34': (C0402, '1u', {'1': 'DVDD', '2': 'GND'}),         # VREG_VOUT pin 45, tik uz pin
     'R33': (R0603, '27', {'1': 'USB_DP', '2': 'DP_H'}),
     'R34': (R0603, '27', {'1': 'USB_DM', '2': 'DM_H'}),
     'R35': (R0603, '1k', {'1': 'LED', '2': 'LED_A'}),
     'D5': (('LED_SMD', 'LED_0603_1608Metric'), 'LED', {'1': 'GND', '2': 'LED_A'}),
-    # letvica za ugradnju: GND, 3V3, TX, RX, RUN, BOOT, USB D+, USB D- (za prvo programiranje MicroPython-a)
-    'J4': (('Connector_PinHeader_2.54mm', 'PinHeader_1x08_P2.54mm_Vertical'), 'HOST',
-           {'1': 'GND', '2': '+3V3', '3': 'TX', '4': 'RX', '5': 'RUN', '6': 'BOOT', '7': 'DP_H', '8': 'DM_H'}),
-    'J5': (('Connector_PinHeader_1.27mm', 'PinHeader_1x03_P1.27mm_Vertical'), 'SWD',
-           {'1': 'SWCLK', '2': 'GND', '3': 'SWDIO'}),
+    # ---- J1: letvica 2x14 / 2,54 mm sa DONJE strane – modul se utiče u matičnu ploču (sve spoljne veze)
+    #  pinovi (neparni red / parni red), s leva na desno: 24V | GND | 3V3,GND | TX,RX | RUN,BOOT | D+,D- | SWCLK,SWDIO |
+    #  GND | LOOP_OUT | ISENSE (povratak petlje) | LOOP_IN | GND
+    'J1': (('Connector_PinHeader_2.54mm', 'PinHeader_2x14_P2.54mm_Vertical'), 'MATICNA 2x14',
+           {'1': '+24V_IN', '2': '+24V_IN', '3': '+24V_IN', '4': '+24V_IN', '5': 'GND', '6': 'GND', '7': 'GND', '8': 'GND',
+            '9': '+3V3', '10': 'GND', '11': 'TX', '12': 'RX', '13': 'RUN', '14': 'BOOT', '15': 'DP_H', '16': 'DM_H',
+            '17': 'SWCLK', '18': 'SWDIO', '19': 'GND', '20': 'GND', '21': 'LOOP_OUT', '22': 'LOOP_OUT',
+            '23': 'ISENSE', '24': 'ISENSE', '25': 'LOOP_IN', '26': 'LOOP_IN', '27': 'GND', '28': 'GND'}),
 }
+
+# delovi sa donje strane (B.Cu); ostali su gore
+DOLE = {'J1'}
 
 POZ = {
     # ulaz i boost (gore)
-    'J1': (105.75, 105.0, 180), 'F1': (111.5, 102.3, 0), 'D1': (111.5, 106.3, 0), 'C1': (104.4, 113.6, 0), 'C2': (111.3, 110.8, 90),
-    'U1': (118.6, 108.4, 0), 'L1': (126.1, 104.1, 0), 'D2': (133.6, 102.8, 0), 'C3': (133.3, 107.3, 0), 'C4': (133.3, 110.6, 0),
-    'C5': (141.6, 105.6, 0), 'C9': (114.8, 113.4, 90), 'R1': (121.0, 114.0, 0), 'R2': (121.0, 115.6, 0), 'R3': (117.6, 115.6, 0),
-    'R4': (117.6, 114.0, 0), 'C6': (124.6, 114.0, 0), 'C7': (124.6, 115.6, 0), 'C8': (124.6, 112.4, 0),
+    'F1': (113.3, 103, 90), 'D1': (110.05, 104.4, 90), 'C1': (104.75, 113.6, 0), 'C2': (117.3, 103.35, 90),
+    'U1': (121, 110.6, 270), 'L1': (122.5, 103.35, 0), 'D2': (125.6, 110.6, 90), 'C3': (124.1, 117.85, 180), 'C4': (128.8, 117.85, 180),
+    'C5': (132.7, 110.2, 0), 'C9': (115.7, 108.3, 270), 'R1': (119.7, 117.6, 0), 'R2': (119.7, 116, 0), 'R3': (116.2, 116, 0),
+    'R4': (116.2, 117.6, 0), 'C6': (119.7, 119.2, 0), 'C7': (119.7, 120.8, 0), 'C8': (117.4, 111.35, 90),
     # buck 3V3 (levo)
-    'U2': (104.0, 120.6, 0), 'C10': (104.0, 123.6, 0), 'L2': (109.6, 121.2, 0), 'C11': (104.4, 126.6, 0), 'C12': (113.6, 119.6, 90),
-    'C13': (115.8, 119.6, 90),
+    'U2': (104, 121, 0), 'C10': (104, 118.45, 0), 'L2': (108.7, 120.3, 0), 'C11': (104, 126.05, 180), 'C12': (112.55, 120.3, 90),
+    'C13': (114.65, 120.3, 90),
     # VSET
-    'R5': (127.6, 118.0, 0), 'R6': (127.6, 119.6, 0), 'C14': (127.6, 121.2, 0), 'R7': (127.6, 122.8, 0), 'Q2': (131.6, 124.6, 0),
-    'R8': (127.6, 124.4, 0), 'Q3': (131.6, 119.0, 0), 'R9': (131.6, 121.8, 0),
+    'R5': (124.55, 121.8, 0), 'R6': (124.55, 123.4, 0), 'C14': (127.6, 121.2, 0), 'R7': (127.6, 122.8, 0), 'Q2': (131.6, 124.6, 0),
+    'R8': (127.6, 124.4, 0), 'Q3': (133.15, 119, 0), 'R9': (131.6, 121.8, 0),
     # izlazni stepen
-    'U3': (141.0, 117.4, 0), 'C15': (136.0, 114.4, 0), 'R10': (145.6, 121.6, 0), 'R11': (141.0, 121.6, 0), 'C16': (141.0, 123.2, 0),
+    'U3': (141.0, 117.4, 0), 'C15': (135.7, 115.45, 0), 'R10': (145.6, 121.6, 0), 'R11': (141.0, 121.6, 0), 'C16': (141, 123.4, 0),
     'R12': (137.0, 121.6, 0), 'Q1': (154.0, 106.0, 0), 'R13': (153.0, 112.8, 0), 'Q4': (148.0, 116.6, 0), 'Q5': (153.0, 117.4, 0),
     'R14': (156.8, 117.4, 90),
     # petlja
-    'F2': (156.8, 125.0, 90), 'D3': (151.2, 124.8, 90), 'R15': (147.6, 125.6, 90), 'R16': (147.6, 129.6, 90), 'C17': (145.6, 129.6, 90),
-    'J2': (146.25, 140.0, 0), 'J3': (154.25, 140.0, 0), 'R17': (157.6, 132.6, 90), 'R18': (155.6, 132.6, 90), 'C18': (153.6, 132.6, 90),
+    'F2': (156.8, 125.0, 90), 'D3': (151.2, 124.8, 90), 'R15': (147.6, 125.6, 90), 'R16': (147.6, 129.6, 90), 'C17': (145.7, 127.9, 90),  'R17': (157.6, 132.6, 90), 'R18': (155.6, 132.6, 90), 'C18': (153.6, 132.6, 90),
     # merenje i zaštita
-    'R19': (141.0, 134.4, 0), 'R20': (137.0, 130.6, 0), 'C19': (137.0, 132.2, 0), 'U4': (140.6, 127.0, 0), 'C20': (136.0, 124.8, 0),
-    'R21': (144.6, 131.0, 90), 'R22': (142.6, 131.0, 90), 'U5': (132.0, 131.0, 0), 'C21': (132.0, 128.4, 0), 'R23': (132.0, 133.6, 0),
+    'R19': (141, 133.95, 0), 'R20': (137.0, 130.6, 0), 'C19': (135.6, 133.55, 0), 'U4': (141.1, 127, 0), 'C20': (135.3, 123.2, 0),
+    'R21': (145.65, 131, 90), 'R22': (145.65, 134.05, 90), 'U5': (131.9, 131, 0), 'C21': (132.0, 128.4, 0), 'R23': (132.0, 133.6, 0),
     'C22': (132.0, 135.2, 0), 'U6': (126.6, 131.0, 0), 'C23': (126.6, 128.4, 0), 'R24': (126.6, 133.6, 0), 'R25': (126.6, 135.2, 0),
-    'R26': (122.6, 128.4, 0), 'C24': (122.6, 126.8, 0), 'D4': (136.6, 135.8, 0), 'R27': (136.6, 137.6, 0), 'Q6': (136.0, 127.8, 0),
-    'Q7': (132.4, 138.2, 0), 'R28': (128.4, 138.2, 0),
+    'R26': (122.95, 130.1, 0), 'C24': (122.6, 126.1, 0), 'D4': (135.45, 135.45, 0), 'R27': (136.6, 137.6, 0), 'Q6': (135.44, 127.25, 90),
+    'Q7': (140.2, 137.72, 0), 'R28': (128.4, 138, 0),
     # RP2040
-    'U7': (116.0, 131.4, 0), 'U8': (105.2, 132.4, 90), 'C25': (105.2, 137.6, 0), 'R29': (109.6, 128.6, 90), 'R30': (109.6, 136.6, 90),
-    'R31': (122.4, 135.6, 0), 'Y1': (116.0, 138.4, 0), 'R32': (120.4, 138.0, 90), 'C26': (112.6, 138.0, 90), 'C27': (119.0, 140.6, 0),
-    'C28': (111.0, 131.4, 90), 'C29': (121.0, 131.4, 90), 'C30': (116.0, 126.2, 0), 'C31': (112.8, 126.2, 0), 'C32': (119.4, 126.2, 0),
-    'C33': (121.0, 128.4, 90), 'C34': (111.0, 134.8, 90),
-    'R33': (124.4, 138.6, 90), 'R34': (126.0, 138.6, 90), 'R35': (101.8, 140.0, 90), 'D5': (101.8, 137.0, 90),
-    'J4': (104.0, 143.0, 90), 'J5': (126.6, 143.2, 90),
+    'U7': (116.0, 131.4, 0), 'U8': (105.2, 132.4, 90), 'C25': (105.2, 137.9, 0), 'R29': (109.1, 128.6, 90), 'R30': (109.6, 136.6, 90),
+    'R31': (122.4, 135.6, 0), 'Y1': (116, 139.35, 0), 'R32': (120.1, 137.25, 90), 'C26': (112.6, 138.0, 90), 'C27': (119, 141.95, 0),
+    'C28': (110.85, 132.4, 180), 'C29': (121.15, 132.4, 0), 'C30': (115.8, 126.2, 90), 'C31': (110.85, 128.8, 180), 'C32': (118.4, 126.2, 90),
+    'C33': (114.75, 126.2, 90), 'C34': (117.35, 126.2, 90),
+    'R33': (128.9, 135.7, 90), 'R34': (123.7, 133.25, 90), 'R35': (101.4, 140.05, 90), 'D5': (101.45, 137, 90),
+    'C36': (124.1, 115.35, 180),
+    'C35': (117.4, 108.3, 270),
+    'C37': (104, 123.55, 180),
+    'C38': (121.15, 128.8, 0),
+    'C39': (119.45, 126.2, 90),
+    'C40': (114.2, 136.6, 270),
+    'C41': (118.8, 136.6, 270),
+    # letvica 2x14 (donja strana): neparni red y=140,6, parni y=143,14; pin 1 levo
+    'J1': (122.35, 140.6, 90),
 }
 
 KLASE = [
-    ('boost', ['+24V_IN', 'VIN_F', 'VIN', 'SW'], 800, 300),
+    ('boost', ['+24V_IN', 'VIN_F', 'SW'], 800, 300),
+    ('vin', ['VIN'], 600, 200),                 # VIN ide i do SOT-23-6 pinova buck-a (korak 0,95 mm)
+    ('buck', ['SW3'], 500, 250),
     ('petlja', ['+34V', 'NE', 'LOOP_DRV', 'LOOP_OUT', 'ISENSE', 'LOOP_IN', 'PE'], 600, 300),
-    ('hv', ['NB', 'U3OUT', 'SW3'], 300, 300),
-    ('logika3v3', ['+3V3', 'DVDD'], 300, 150),
+    ('hv', ['NB', 'U3OUT'], 300, 300),
+    ('logika3v3', ['+3V3', 'DVDD'], 250, 150),  # RP2040 QFN korak 0,4 mm
 ]
 
 BLOKOVI = [
-    ('1 ULAZ 24V', ['J1', 'F1', 'D1', 'C1', 'C2']),
-    ('2 BOOST 34V', ['U1', 'L1', 'D2', 'C3', 'C4', 'C5', 'R1', 'R2', 'R3', 'R4', 'C6', 'C7', 'C8', 'C9']),
-    ('3 BUCK 3V3', ['U2', 'C10', 'L2', 'C11', 'C12', 'C13']),
+    ('1 ULAZ 24V', ['F1', 'D1', 'C1', 'C2']),
+    ('2 BOOST 34V', ['U1', 'L1', 'D2', 'C3', 'C4', 'C5', 'R1', 'R2', 'R3', 'R4', 'C6', 'C7', 'C8', 'C9', 'C35', 'C36']),
+    ('3 BUCK 3V3', ['U2', 'C10', 'L2', 'C11', 'C12', 'C13', 'C37']),
     ('4 VSET', ['R5', 'R6', 'C14', 'R7', 'Q2', 'R8', 'Q3', 'R9']),
     ('5 IZLAZ 24/31V', ['U3', 'C15', 'R10', 'R11', 'C16', 'R12', 'Q1', 'R13', 'Q4', 'Q5', 'R14']),
-    ('6 PETLJA', ['F2', 'D3', 'R15', 'R16', 'C17', 'J2', 'J3', 'R17', 'R18', 'C18']),
+    ('6 PETLJA', ['F2', 'D3', 'R15', 'R16', 'C17', 'R17', 'R18', 'C18']),
     ('7 MERENJE I ZASTITA', ['R19', 'R20', 'C19', 'U4', 'C20', 'R21', 'R22', 'U5', 'C21', 'R23', 'C22',
                              'U6', 'C23', 'R24', 'R25', 'R26', 'C24', 'D4', 'R27', 'Q6', 'Q7', 'R28']),
     ('8 RP2040', ['U7', 'U8', 'C25', 'R29', 'R30', 'R31', 'Y1', 'R32', 'C26', 'C27', 'C28', 'C29', 'C30',
-                  'C31', 'C32', 'C33', 'C34', 'R33', 'R34', 'R35', 'D5', 'J4', 'J5']),
+                  'C31', 'C32', 'C33', 'C34', 'C38', 'C39', 'C40', 'C41', 'R33', 'R34', 'R35', 'D5']),
+    ('9 LETVICA 2x14 (DOLE)', ['J1']),
 ]
 
-PREVODI = []
+# Ručno nacrtani strujni putevi prekidačkih napajanja (TI SLVSBD4E §10, SLVSE22B §11): najkraće i najšire moguće,
+# zaključani; Freerouting ih zadržava i rutira samo ostatak.  (mreža, [(sloj, x1, y1, x2, y2, širina)], [via])
+PREVODI = [
+    # boost SW čvor: SW pinovi 1,2 (gore desno na U1) -> L1 pad 2 -> anoda D2; petlja što manja (SW max 40 V!)
+    ('SW', [('F', 122.3, 107.6, 122.3, 106.2, 0.4), ('F', 122.95, 107.6, 122.95, 106.2, 0.4),
+            ('F', 122.3, 106.2, 124.6, 106.2, 0.8), ('F', 124.6, 106.2, 125.6, 106.2, 1.0),
+            ('F', 125.6, 106.2, 125.6, 108.0, 1.2)], []),
+    # VIN: C2 -> L1 pad 1 -> U1 VIN (3) i EN (4); C9/C35 uz VIN pin; ulaz od D1
+    ('VIN', [('F', 118.0, 104.8, 120.0, 104.8, 1.0), ('F', 121.0, 107.6, 121.0, 105.5, 0.4),
+             ('F', 121.0, 107.2, 121.65, 107.2, 0.35), ('F', 115.7, 107.5, 117.4, 107.5, 0.6),
+             ('F', 117.4, 107.5, 118.3, 106.3, 0.5), ('F', 118.3, 106.3, 119.6, 105.6, 0.5),
+             ('F', 110.6, 107.0, 115.7, 107.5, 0.8), ('F', 110.0, 107.6, 102.5, 113.0, 0.8),
+             # buck VIN: pinovi 4,5 -> C37 (100n) -> C11 (10u)
+             ('F', 105.3, 121.0, 105.3, 123.5, 0.6), ('F', 105.3, 123.5, 105.5, 125.5, 0.6)], []),
+    # +34V: katoda D2 -> C36 -> C3; katoda -> C5 -> C4
+    ('+34V', [('F', 125.6, 113.5, 125.6, 117.0, 1.2), ('F', 126.2, 112.0, 128.2, 110.6, 1.0),
+              ('F', 130.3, 111.2, 130.3, 117.0, 1.0)], []),
+    # PGND: pinovi 11-14 -> masa C36 i C3 (zatvara izlaznu petlju), via na donju masu
+    ('GND', [('F', 121.0, 114.0, 122.95, 114.0, 0.35), ('F', 122.3, 114.0, 122.6, 117.8, 0.6),
+             # buck GND pin 2 -> C37 i C11 (oko FB pina sa leve strane)
+             ('F', 102.4, 121.0, 101.4, 121.0, 0.5), ('F', 101.4, 121.0, 101.4, 125.5, 0.5),
+             ('F', 101.4, 123.55, 103.2, 123.55, 0.5), ('F', 101.4, 125.5, 102.5, 125.5, 0.5)],
+     [(121.4, 115.0), (122.6, 119.8), (101.4, 122.3),
+      # termalne via u PowerPAD-u U1 (TI: thermal vias do donje mase)
+      (119.4, 109.8), (121.0, 109.8), (122.6, 109.8), (119.4, 111.4), (121.0, 111.4), (122.6, 111.4)]),
+    # ulaz: F1 -> D1 (24 V dolazi sa letvice J1 dole)
+    ('VIN_F', [('F', 113.3, 101.6, 110.0, 101.6, 0.8)], []),
+    # buck: SW pin 6 -> L2, C10 (CB) na SW i na CB pin 1
+    ('SW3', [('F', 105.4, 120.05, 107.0, 120.05, 0.6), ('F', 104.8, 118.6, 105.2, 119.9, 0.4)], []),
+    ('CB', [('F', 103.2, 118.5, 103.0, 120.0, 0.4)], []),
+]
 
 X0, Y0, X1, Y1 = 100, 100, 160, 145
 
@@ -230,7 +293,8 @@ def napravi():
     b = pcbnew.BOARD()
     ds = b.GetDesignSettings()
     ds.SetCopperLayerCount(2)
-    nc = ds.m_NetSettings.m_DefaultNetClass
+    ns = ds.m_NetSettings
+    nc = ns.m_DefaultNetClass if hasattr(ns, 'm_DefaultNetClass') else ns.GetDefaultNetclass()  # KiCad 7 / 9+
     nc.SetClearance(MM(0.15))
     nc.SetTrackWidth(MM(0.2))
     nc.SetViaDiameter(MM(0.6))
@@ -255,6 +319,8 @@ def napravi():
         b.Add(fp)
         fp.SetPosition(pcbnew.VECTOR2I(MM(x), MM(y)))
         fp.SetOrientationDegrees(rot)
+        if ref in DOLE:
+            fp.Flip(fp.GetPosition(), pcbnew.FLIP_DIRECTION_TOP_BOTTOM)
         for pad in fp.Pads():
             m = pins.get(pad.GetNumber())
             if m:
@@ -272,7 +338,7 @@ def napravi():
         b.Add(s)
     # natpisi na donjoj strani (gore nema mesta)
     for txt, x, y, sz in [('APOLLO LOOP DRIVER MODUL v0.1 - SAMO LAB', 130, 104, 1.0),
-                          ('J4: GND 3V3 TX RX RUN BOOT D+ D-', 130, 107, 0.8)]:
+                          ('J1 2x14 (dole): 24V GND 3V3 TX RX RUN BOOT D+ D- SWD GND LOOP_OUT ISENSE LOOP_IN GND', 130, 107, 0.7)]:
         t = pcbnew.PCB_TEXT(b)
         t.SetText(txt)
         t.SetPosition(pcbnew.VECTOR2I(MM(x), MM(y)))
@@ -318,7 +384,7 @@ def napravi():
     for (ax, ay, bx, by) in [(X0, Y0, X1, Y0 + 0.35), (X0, Y1 - 0.35, X1, Y1), (X0, Y0, X0 + 0.35, Y1), (X1 - 0.35, Y0, X1, Y1)]:
         kz = pcbnew.ZONE(b)
         kz.SetIsRuleArea(True); kz.SetDoNotAllowTracks(True); kz.SetDoNotAllowVias(True)
-        kz.SetDoNotAllowCopperPour(False); kz.SetDoNotAllowPads(False); kz.SetDoNotAllowFootprints(False)
+        (kz.SetDoNotAllowCopperPour if hasattr(kz, 'SetDoNotAllowCopperPour') else kz.SetDoNotAllowZoneFills)(False); kz.SetDoNotAllowPads(False); kz.SetDoNotAllowFootprints(False)
         ls = pcbnew.LSET(); ls.AddLayer(pcbnew.F_Cu); ls.AddLayer(pcbnew.B_Cu); kz.SetLayerSet(ls)
         o = kz.Outline(); o.NewOutline()
         for x, y in [(ax, ay), (bx, ay), (bx, by), (ax, by)]:
@@ -328,15 +394,24 @@ def napravi():
     return b, nets
 
 
+def kutija(f):
+    """Zauzeće na GORNJOJ strani u mm (x0, y0, x1, y1): courtyard; za delove sa donje strane samo THT padovi + 0,25 mm."""
+    if f.IsFlipped():
+        q = [pd.GetBoundingBox() for pd in f.Pads()]
+        m = 0.25
+        return (pcbnew.ToMM(min(b.GetLeft() for b in q)) - m, pcbnew.ToMM(min(b.GetTop() for b in q)) - m,
+                pcbnew.ToMM(max(b.GetRight() for b in q)) + m, pcbnew.ToMM(max(b.GetBottom() for b in q)) + m)
+    c = f.GetCourtyard(pcbnew.F_CrtYd)
+    bb = c.BBox() if not c.IsEmpty() else f.GetBoundingBox(False, False)
+    return (pcbnew.ToMM(bb.GetLeft()), pcbnew.ToMM(bb.GetTop()), pcbnew.ToMM(bb.GetRight()), pcbnew.ToMM(bb.GetBottom()))
+
+
 def preklapanja(b):
     """Parovi komponenti čiji se courtyard-i preklapaju, i komponente van ivice ploče."""
     out = []
     box = {}
     for f in b.GetFootprints():
-        c = f.GetCourtyard(pcbnew.F_CrtYd)
-        bb = c.BBox() if not c.IsEmpty() else f.GetBoundingBox(False, False)
-        box[f.GetReference()] = (pcbnew.ToMM(bb.GetLeft()), pcbnew.ToMM(bb.GetTop()),
-                                 pcbnew.ToMM(bb.GetRight()), pcbnew.ToMM(bb.GetBottom()))
+        box[f.GetReference()] = kutija(f)
     refs = sorted(box)
     for i, a in enumerate(refs):
         ax0, ay0, ax1, ay1 = box[a]

@@ -45,7 +45,8 @@ Sledeći koraci:
 2. `finish_pcb.py` i `jlc.py` su kopirani iz LoopNet-a: **promeniti dimenzije ploče** (OKVIR, granice 130/120 → 160/145,
    mreža šivenja 30×20 → 60×45) i tabelu LCSC u `jlc.py` (sve stavke modula).
 3. `.kicad_dru` (razmak 0,3 mm za +34V/LOOP mreže), `build.sh`, DRC bez grešaka.
-4. Šema na jednom listu (schemdraw, kao `loopnet/child/hardware/schematic/kompletna.py`), README, 3D.
+4. ~~Šema na jednom listu~~ GOTOVO: `apollo-loop-module/hardware/schematic/kompletna.py` (+ `alat.py`) → `.svg/.png`;
+   skripta čita `P` iz `make_pcb.py` i proverava povezanost (0 grešaka). Ostaje README, 3D.
 5. Firmver: postojeći `apollo-loop-driver/firmware` + UART komande (umesto USB REPL-a).
 
 ## 4. Napomene o okruženju (cloud sesija)
