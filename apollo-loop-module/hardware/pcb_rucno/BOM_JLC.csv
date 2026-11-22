@@ -23,7 +23,7 @@ LED,D5,LED_0603_1608Metric,C2286,KENTO KT-0603R,S,B; crvena
 3A,F1,Fuse_1206_3216Metric,C14165,Littelfuse 0466003.NRHF,M,E; 32 V
 PTC 750mA/60V,F2,Fuse_2920_7451Metric,C47513,Ruilon SMD2920P075TF/60,M,E
 MATICNA 2x14,J1,PinHeader_2x14_P2.54mm_Vertical,,,,"Letvica 2x14 / 2,54 mm THT, donja strana – lemi se ručno ili JLC THT opcija"
-33uH SRN6045TA-330M,L1,L_Bourns_SRN6045TA,C780211,Bourns SRN6045-330M,?,"E; LCSC ima SRN6045 bez TA (1,4 A) – otisak 6x6, proveri struju boost-a"
+33uH SRN6045TA-330M,L1,L_Bourns_SRN6045TA,C780211,Bourns SRN6045-330M,?,"E; SRN6045 bez TA (nije AEC-Q200), 1,4 A; vrh struje L1 ~0,71 A @20 V – rezerva >2x; proveri otisak 6x6"
 15uH SRN4018-150M,L2,L_Bourns-SRN4018,C326304,3L COILS SNR4018K-150M,?,"E; ZAMENA (Bourns nije na LCSC), 0,92 A; proveri otisak 4x4"
 MJD122,Q1,TO-252-2,C59488,CJ MJD122,S,"E; DPAK, 100 V 8 A"
 2N7002,"Q2,Q3,Q6,Q7",SOT-23,C8545,CJ 2N7002,M,B

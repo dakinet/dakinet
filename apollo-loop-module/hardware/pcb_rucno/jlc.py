@@ -44,7 +44,7 @@ LCSC = {
     ('LED', 'LED_0603_1608Metric'): ('C2286', 'KENTO KT-0603R', 'S', 'B; crvena'),
     # --- induktivnosti
     ('33uH SRN6045TA-330M', 'L_Bourns_SRN6045TA'):
-        ('C780211', 'Bourns SRN6045-330M', '?', 'E; LCSC ima SRN6045 bez TA (1,4 A) – otisak 6x6, proveri struju boost-a'),
+        ('C780211', 'Bourns SRN6045-330M', '?', 'E; SRN6045 bez TA (nije AEC-Q200), 1,4 A; vrh struje L1 ~0,71 A @20 V – rezerva >2x; proveri otisak 6x6'),
     ('15uH SRN4018-150M', 'L_Bourns-SRN4018'):
         ('C326304', '3L COILS SNR4018K-150M', '?', 'E; ZAMENA (Bourns nije na LCSC), 0,92 A; proveri otisak 4x4'),
     # --- osigurači

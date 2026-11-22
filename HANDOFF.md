@@ -72,7 +72,7 @@ Sledeći koraci:
 - Boost/buck po TI smernicama; analogni deo boost-a po redosledu pinova (COMP | FB | FREQ); dugi GPIO vodovi vraćeni
   na F.Cu jer su na B.Cu sekli masu u ostrva.
 - BOM/CPL: `jlc.py` → `BOM_JLC.csv`, `CPL_JLC.csv`, `bom.csv` (55 stavki, 102 dela; J1 se lemi ručno). LCSC brojevi
-  označeni S/M/?; nepotvrđeni: L1 (LCSC ima SRN6045 bez TA, 1,4 A), L2 (zamena 3L SNR4018K-150M, 0,92 A), 15 pF (C1644).
+  označeni S/M/?; nepotvrđeni: L1 (LCSC ima SRN6045 bez TA, 1,4 A; vrh L1 ≈0,71 A @20 V ulaz, 34,4 V/250 mA, 580 kHz – dovoljno), L2 (zamena 3L SNR4018K-150M, 0,92 A), 15 pF (C1644).
 - **Proveriti pre narudžbine:** stanje i cene u JLC katalogu (TPS560430 ~300-400 kom), tented via ispod
   RP2040 (JLC opcija „tented vias“).
 - TPS55340PWPR = TI PWP0014K (crtež 4229706/B, datasheet SLVSBD4E): bakar 3,4×5 se slaže; maska i pasta footprint-a
