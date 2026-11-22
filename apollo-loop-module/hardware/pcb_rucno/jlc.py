@@ -1,50 +1,94 @@
-#!/usr/bin/env python3.12
 """Izlazni fajlovi za JLCPCB: Gerber + drill (zip), BOM_JLC.csv, CPL_JLC.csv, bom.csv.
 
-Pokreni posle build.sh:  python3.12 jlc.py
-Kolona „Provera“: S = broj viđen na LCSC/JLC stranici u rezultatima web pretrage (jlcpcb.com/lcsc.com nisu
-dostupni iz kontejnera, pa ništa nije otvoreno direktno), M = isti deo već je u BOM-u apollo-loop-driver,
-? = NIJE potvrđeno. Napomena počinje sa B (JLC Basic, prema listi basic delova sa GitHub-a cpldcpu/TouchSynth) ili E (Extended) – pre narudžbine proveri u JLC katalogu (navedena je preporučena oznaka proizvođača).
+Pokreni (KiCad 10, Windows):  "C:/Program Files/KiCad/10.0/bin/python.exe" jlc.py
+Kolona „Provera“: S = broj viđen na LCSC/JLC stranici u rezultatima web pretrage (22.11.2026, stranice nisu otvarane
+direktno), M = isti deo (vrednost + kućište) već je u BOM-u apollo-loop-driver, ? = NIJE potvrđeno (broj iz sećanja ili
+zamena) – obavezno proveriti u JLC katalogu pre narudžbine. Napomena: B = JLC Basic, E = Extended (+3 USD po vrsti).
 """
-import csv, os, re, subprocess, sys, zipfile
-sys.path.insert(0, '/usr/lib/python3/dist-packages')
+import csv
+import os
+import re
+import subprocess
+import zipfile
+
 import pcbnew
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 PCB = 'apollo_module.kicad_pcb'
-R0402, R0603 = 'R_0402_1005Metric', 'R_0603_1608Metric'
-C0402, C0805 = 'C_0402_1005Metric', 'C_0805_2012Metric'
-TB = 'TerminalBlock_Phoenix_PT-1,5-2-3.5-H_1x02_P3.50mm_Horizontal'
+CLI = r'C:\Program Files\KiCad\10.0\bin\kicad-cli.exe'
+R0603, R0805, R2512 = 'R_0603_1608Metric', 'R_0805_2012Metric', 'R_2512_6332Metric'
+C0402, C0603, C0805, C1210 = 'C_0402_1005Metric', 'C_0603_1608Metric', 'C_0805_2012Metric', 'C_1210_3225Metric'
+SOT23, SOIC8 = 'SOT-23', 'SOIC-8_3.9x4.9mm_P1.27mm'
 
 # (vrednost, otisak) -> (LCSC, proizvođač i oznaka, provera, napomena)
 LCSC = {
-    # Basic (B) = bez naknade za učitavanje; Extended (E) = 3 USD po vrsti dela
-    ('ATtiny1616-MNR', 'VQFN-20-1EP_3x3mm_P0.4mm_EP1.7x1.7mm'): ('C507118', 'Microchip ATTINY1616-MNR', 'S', 'E; nema Basic zamene'),
-    ('HT7533-1', 'SOT-89-3'): ('C14289', 'Holtek HT7533-1', 'S', 'B; 1 GND, 2 VIN, 3 VOUT - PROVERI datasheet (klonovi imaju drugi raspored)'),
-    ('BAV99', 'SOT-23'): ('C2500', 'Nexperia BAV99,215', 'S', 'B'),
-    ('MMBT5551', 'SOT-23'): ('C2145', 'JSCJ MMBT5551', 'S', 'B; 160 V'),
-    ('MMBT3904', 'SOT-23'): ('C20526', 'CJ MMBT3904', 'M', 'B'),
-    ('SMAJ40A', 'D_SMA'): ('C3719895', 'Taiwan Semi SMAJ40A', 'S', 'E; nema Basic TVS 40 V'),
-    ('BZT52C10', 'D_SOD-123'): ('C2103', 'JSCJ BZT52C10', 'S', 'E; nema Basic zener'),
-    ('LED', 'LED_0603_1608Metric'): ('C2286', 'Hubei KENTO KT-0603R', 'S', 'B; crvena'),
-    ('TASTER', 'SW_Push_1P1T_XKB_TS-1187A'): ('C318884', 'XKB TS-1187A-B-A-B', 'M', 'B'),
-    ('10u/25V', C0805): ('C15850', 'Samsung CL21A106KAYNNNE', 'M', 'B; X5R 25 V'),
+    # --- IC
+    ('TPS55340PWPR', 'Texas_HTSSOP-14-1EP_4.4x5mm_P0.65mm_EP3.4x5mm_Mask3.155x3.255mm'):
+        ('C43862', 'TI TPS55340PWPR', 'S', 'E; boost'),
+    ('TPS560430X3FDBVR', 'SOT-23-6'): ('C2071721', 'TI TPS560430X3FDBVR', 'S', 'E; buck 3,3 V; malo na stanju (~300-400)'),
+    ('RP2040', 'QFN-56-1EP_7x7mm_P0.4mm_EP3.2x3.2mm'): ('C2040', 'Raspberry Pi RP2040', 'M', 'E'),
+    ('W25Q16JVSS', 'SOIC-8_5.3x5.3mm_P1.27mm'): ('C131025', 'Winbond W25Q16JVSSIQ', 'M', 'E; SOIC-8 208 mil'),
+    ('OPA197', SOIC8): ('C79274', 'TI OPA197IDR', 'M', 'E'),
+    ('MCP6002', SOIC8): ('C7377', 'Microchip MCP6002T-I/SN', 'M', 'E'),
+    ('MCP6561T-E/OT', 'SOT-23-5'): ('C117501', 'Microchip MCP6561T-E/OT', 'M', 'E'),
+    ('12MHz ABM8-272-T3', 'Crystal_SMD_3225-4Pin_3.2x2.5mm'): ('C20625731', 'Abracon ABM8-272-T3', 'S', 'E; CL 10 pF (uz 15 pF kond.)'),
+    # --- poluprovodnici
+    ('MJD122', 'TO-252-2'): ('C59488', 'CJ MJD122', 'S', 'E; DPAK, 100 V 8 A'),
+    ('2N7002', SOT23): ('C8545', 'CJ 2N7002', 'M', 'B'),
+    ('MMBT3904', SOT23): ('C20526', 'CJ MMBT3904', 'M', 'B'),
+    ('MMBT5401', SOT23): ('C8326', 'CJ MMBT5401', 'S', 'E; nema Basic 5401'),
+    ('BAT54J', 'D_SOD-323'): ('C130415', 'Nexperia BAT54J,115', 'M', 'E'),
+    ('SS34', 'D_SMA'): ('C8678', 'MDD SS34', 'M', 'B'),
+    ('SS210', 'D_SMA'): ('C14996', 'MDD SS210', 'S', 'B; 100 V 2 A'),
+    ('SMBJ36A', 'D_SMB'): ('C353364', 'SMBJ36A', 'M', 'E'),
+    ('LED', 'LED_0603_1608Metric'): ('C2286', 'KENTO KT-0603R', 'S', 'B; crvena'),
+    # --- induktivnosti
+    ('33uH SRN6045TA-330M', 'L_Bourns_SRN6045TA'):
+        ('C780211', 'Bourns SRN6045-330M', '?', 'E; LCSC ima SRN6045 bez TA (1,4 A) – otisak 6x6, proveri struju boost-a'),
+    ('15uH SRN4018-150M', 'L_Bourns-SRN4018'):
+        ('C326304', '3L COILS SNR4018K-150M', '?', 'E; ZAMENA (Bourns nije na LCSC), 0,92 A; proveri otisak 4x4'),
+    # --- osigurači
+    ('3A', 'Fuse_1206_3216Metric'): ('C14165', 'Littelfuse 0466003.NRHF', 'M', 'E; 32 V'),
+    ('PTC 750mA/60V', 'Fuse_2920_7451Metric'): ('C47513', 'Ruilon SMD2920P075TF/60', 'M', 'E'),
+    # --- elektroliti
+    ('100u/50V', 'CP_Elec_8x10'): ('C569485', 'SUNCON 50CE100LX', 'S', 'E; D8xL10,2'),
+    ('47u/50V', 'CP_Elec_6.3x7.7'): ('C83788', 'CapXon DV470M050E077ETR', 'S', 'E'),
+    # --- keramički kondenzatori
+    ('10u/50V', C1210): ('C138687', 'Samsung CL32B106KBJNNNE', 'S', 'E; X7R 50 V'),
+    ('22u/10V', C0805): ('C45783', 'Samsung CL21A226MAQNNNE', 'S', 'B; 25 V (bolje od 10 V)'),
+    ('10u', C0805): ('C15850', 'Samsung CL21A106KAYNNNE', 'M', 'B; 25 V'),
+    ('100n', C0603): ('C14663', 'Yageo CC0603KRX7R9BB104', 'M', 'B; 50 V'),
+    ('100n/50V', C0603): ('C14663', 'Yageo CC0603KRX7R9BB104', 'M', 'B; 50 V X7R'),
+    ('1u', C0603): ('C15849', 'Samsung CL10A105KB8NNNC', 'M', 'B; 50 V'),
+    ('1u/50V', C0603): ('C15849', 'Samsung CL10A105KB8NNNC', 'M', 'B; 50 V X5R'),
+    ('1n', C0603): ('C1588', 'Samsung CL10B102KB8NNNC', 'M', 'B'),
+    ('100p', C0603): ('C14858', 'Samsung CL10C101JB8NNNC', 'S', 'B; C0G'),
+    ('10n', C0603): ('C57112', 'FH 0603B103K500NT', 'S', 'B'),
+    ('15p', C0603): ('C1644', 'Samsung CL10C150JB8NNNC', '?', 'B; C0G, kristal'),
+    ('47n', C0603): ('C1622', 'Samsung CL10B473KB8NNNC', 'S', 'B'),
     ('100n', C0402): ('C1525', 'Samsung CL05B104KO5NNNC', 'S', 'B'),
-    ('10n', C0402): ('C15195', 'Samsung CL05B103KB5NNNC', 'S', 'B'),
-    ('1n', C0402): ('C1523', 'FH 0402B102K500NT', 'S', 'B'),
-    ('1k', R0402): ('C11702', 'UNI-ROYAL 0402WGF1001TCE', 'S', 'B'),
-    ('2k2', R0402): ('C25879', 'UNI-ROYAL 0402WGF2201TCE', 'S', 'B'),
-    ('3k3', R0402): ('C25890', 'UNI-ROYAL 0402WGF3301TCE', 'S', 'B; odredjuje I_CC'),
-    ('100k', R0402): ('C25741', 'UNI-ROYAL 0402WGF1003TCE', 'S', 'B'),
-    ('330k', R0603): ('C23137', 'UNI-ROYAL 0603WAF3303T5E', 'S', 'B'),
-    ('270', R0603): ('C22966', 'UNI-ROYAL 0603WAF2700T5E', 'S', 'B; odredjuje ~9,4 mA odgovora'),
-    ('1M', R0603): ('C22935', 'UNI-ROYAL 0603WAF1004T5E', 'S', 'B'),
-    ('4M7', R0603): ('C23163', 'UNI-ROYAL 0603WAF4704T5E', '?', 'E; nema Basic >1 MOhm (1M bi trosio +25 µA)'),
+    ('1u', C0402): ('C52923', 'Samsung CL05A105KA5NQNC', 'S', 'B; 25 V'),
+    # --- otpornici 0603 (UNI-ROYAL 0603WAF…, Basic)
+    ('10k', R0603): ('C25804', 'UNI-ROYAL 0603WAF1002T5E', 'M', 'B'),
+    ('1k', R0603): ('C21190', 'UNI-ROYAL 0603WAF1001T5E', 'M', 'B'),
+    ('100k', R0603): ('C25803', 'UNI-ROYAL 0603WAF1003T5E', 'M', 'B'),
+    ('27', R0603): ('C25190', 'UNI-ROYAL 0603WAF270JT5E', 'M', 'B'),
+    ('10', R0603): ('C22859', 'UNI-ROYAL 0603WAF100JT5E', 'S', 'B'),
+    ('100', R0603): ('C22775', 'UNI-ROYAL 0603WAF1000T5E', 'S', 'B'),
+    ('470', R0603): ('C23179', 'UNI-ROYAL 0603WAF4700T5E', 'S', 'B'),
+    ('2k2', R0603): ('C4190', 'UNI-ROYAL 0603WAF2201T5E', 'S', 'B'),
+    ('3k24', R0603): ('C22994', 'UNI-ROYAL 0603WAF3241T5E', 'S', 'B?; FB boost-a'),
+    ('13k', R0603): ('C22797', 'UNI-ROYAL 0603WAF1302T5E', 'S', 'B'),
+    ('15k', R0603): ('C22809', 'UNI-ROYAL 0603WAF1502T5E', 'S', 'B'),
+    ('40k2', R0603): ('C12447', 'UNI-ROYAL 0603WAF4022T5E', 'S', 'E; podešava napon'),
+    ('82k', R0603): ('C310289', 'FH RS-03K8202FT', 'S', 'E; UNI-ROYAL 82k nije nađen'),
+    ('270k', R0603): ('C22965', 'UNI-ROYAL 0603WAF2703T5E', 'S', 'B'),
+    ('91k', R0805): ('C137484', 'Yageo RC0805FR-0791KL', 'M', 'E; ne C17855 (9k1)'),
+    ('1R 1W', R2512): ('C11254', 'UNI-ROYAL 25121WF100KT4E', 'M', 'E; 1 W 1 %'),
+    ('2R0 1W', R2512): ('C49298', 'UNI-ROYAL 25121WF200KT4E', 'S', 'E; 1 W 1 % (NE 25121WF200LT4E = 0,2 oma)'),
 }
-for v in ('LINIJA ULAZ', 'LINIJA IZLAZ', 'ULAZ'):
-    LCSC[(v, TB)] = ('C474892', 'Kefa KF350-3.5-2P', 'S', 'E; THT 3,5 mm; uporedi crtež sa Phoenix PT 1,5/2-3,5-H')
-# ne montira JLC
-RUCNO = {'J4': 'UPDI: rupe 1,27 mm, ne montira se (pogo ili zalemljene žice)'}
+# ne montira JLC SMT (THT, telo letvice je na donjoj strani)
+RUCNO = {'J1': 'Letvica 2x14 / 2,54 mm THT, donja strana – lemi se ručno ili JLC THT opcija'}
 
 
 def footprints(board):
@@ -69,9 +113,9 @@ def main():
     for f in os.listdir('gerber'):
         os.remove(os.path.join('gerber', f))
     layers = 'F.Cu,B.Cu,F.Paste,B.Paste,F.Silkscreen,B.Silkscreen,F.Mask,B.Mask,Edge.Cuts'
-    subprocess.run(['kicad-cli', 'pcb', 'export', 'gerbers', '-o', 'gerber/', '-l', layers,
+    subprocess.run([CLI, 'pcb', 'export', 'gerbers', '-o', 'gerber/', '-l', layers,
                     '--subtract-soldermask', PCB], check=True, capture_output=True)
-    subprocess.run(['kicad-cli', 'pcb', 'export', 'drill', '-o', 'gerber/', '--excellon-separate-th',
+    subprocess.run([CLI, 'pcb', 'export', 'drill', '-o', 'gerber/', '--excellon-separate-th',
                     '--format', 'excellon', '-u', 'mm', PCB], check=True, capture_output=True)
     with zipfile.ZipFile('apollo_module_gerber.zip', 'w', zipfile.ZIP_DEFLATED) as z:
         for f in sorted(os.listdir('gerber')):
@@ -82,7 +126,8 @@ def main():
         grupe.setdefault((f['val'], f['fp']), []).append(f['ref'])
     red = sorted(grupe.items(), key=lambda kv: natkey(sorted(kv[1], key=natkey)[0]))
     nepotvrdjeno = []
-    with open('BOM_JLC.csv', 'w', newline='') as fh, open('bom.csv', 'w', newline='') as fb:
+    with open('BOM_JLC.csv', 'w', newline='', encoding='utf-8') as fh, \
+            open('bom.csv', 'w', newline='', encoding='utf-8') as fb:
         w, wb = csv.writer(fh), csv.writer(fb)
         w.writerow(['Comment', 'Designator', 'Footprint', 'LCSC Part #', 'Manufacturer Part', 'Provera', 'Note'])
         wb.writerow(['Kolicina', 'Oznake', 'Vrednost', 'Kuciste', 'LCSC', 'Provera'])
@@ -96,7 +141,7 @@ def main():
                 nepotvrdjeno.append((val, fp, refs, mpn))
             w.writerow([val, ','.join(refs), fp, lc, mpn, pr, note])
             wb.writerow([len(refs), ' '.join(refs), val, fp, lc, pr])
-    with open('CPL_JLC.csv', 'w', newline='') as fh:
+    with open('CPL_JLC.csv', 'w', newline='', encoding='utf-8') as fh:
         w = csv.writer(fh)
         w.writerow(['Designator', 'Mid X', 'Mid Y', 'Layer', 'Rotation'])
         for f in sorted(fps, key=lambda f: natkey(f['ref'])):
