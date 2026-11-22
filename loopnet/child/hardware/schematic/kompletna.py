@@ -32,12 +32,15 @@ def crtaj(fname):
         L((0, YLA), (xa, YLA)); L((0, YLB), (xb, YLB))
         mreza((3.6, YLA + 0.5), 'LA'); mreza((4.6, YLB - 0.55), 'LB')
         # most 2x BAV99
-        d.add(elm.Diode().at((xa, YLA)).to((xa, YVP)).label('D1', loc='left'))
-        d.add(elm.Diode().at((xa, YG)).to((xa, YLA)).label('D1', loc='left'))
-        d.add(elm.Diode().at((xb, YLB)).to((xb, YVP)).label('D2', loc='right'))
-        d.add(elm.Diode().at((xb, YG)).to((xb, YLB)).label('D2', loc='right'))
+        d.add(elm.Diode().at((xa, YLA)).to((xa, YVP)))
+        d.add(elm.Diode().at((xa, YG)).to((xa, YLA)))
+        d.add(elm.Diode().at((xb, YLB)).to((xb, YVP)))
+        d.add(elm.Diode().at((xb, YG)).to((xb, YLB)))
         dot((xa, YLA)); dot((xb, YLB))
-        txt((7.0, -1.6), 'D1, D2 = BAV99', fontsize=9)
+        for x, y, t, h in ((xa - 0.35, (YLA + YVP) / 2, 'D1\n3→2', 'right'), (xa - 0.35, YLA / 2, 'D1\n1→3', 'right'),
+                           (xb + 0.35, (YLB + YVP) / 2, 'D2\n3→2', 'left'), (xb + 0.35, YLB / 2, 'D2\n1→3', 'left')):
+            txt((x, y), t, fontsize=9, halign=h)
+        txt((7.0, -1.9), 'D1, D2 = BAV99 (SOT-23): 1 anoda, 2 katoda, 3 sredina\nQ1, Q2, Q3 (SOT-23): 1 B, 2 E, 3 C', fontsize=9)
         # LA/LB gore, ka delitelju prijema
         L((2.6, YLA), (2.6, YTA)); dot((2.6, YLA))
         L((1.6, YLB), (1.6, YTB)); dot((1.6, YLB))
@@ -76,7 +79,7 @@ def crtaj(fname):
         xz, xc1, xu = 23.5, 25.5, 28.5
         L(VC, (xu, YVC))
         mreza((22.0, YVC + 0.5), 'VC ≈ 10 V')
-        d.add(elm.Zener().at((xz, YG)).to((xz, YVC)).label('D4\nBZT52C10', loc='bottom')); dot((xz, YVC)); dot((xz, YG))
+        d.add(elm.Zener().at((xz, YG)).to((xz, YVC)).label('D4\nBZT52C10', loc='top')); dot((xz, YVC)); dot((xz, YG))
         d.add(elm.Capacitor().at((xc1, YVC)).to((xc1, YG)).label('C1\n10µ/25V', loc='bottom')); dot((xc1, YVC)); dot((xc1, YG))
         u1 = d.add(elm.Ic(pins=[elm.IcPin(name='VIN', pin='2', side='left'), elm.IcPin(name='VOUT', pin='3', side='right'),
                                 elm.IcPin(name='GND', pin='1', side='bottom')],
@@ -142,8 +145,13 @@ def crtaj(fname):
         # R5 do GND: kroz levo, preko VDD nivoa ne prelazi (ide do VC visine pa na GND)
         # UPDI J4
         xj = u2.PA0[0] - 2.4
-        L(u2.PA0, (xj, u2.PA0[1])); d.add(elm.Dot(open=True).at((xj, u2.PA0[1])).label('J4-2 UPDI', loc='bottom'))
-        txt((xj - 0.2, u2.PA0[1] - 1.5), 'J4-1 = VDD, J4-3 = GND', fontsize=8, halign='left')
+        L(u2.PA0, (xj, u2.PA0[1])); d.add(elm.Dot(open=True).at((xj, u2.PA0[1])).label('J4-2 UPDI', loc='top'))
+        # J4-1 na VDD, J4-3 na GND
+        yv = u2.VDD[1]
+        dot((xj, yv)); L((xj, yv), (xj, yv - 0.7))
+        d.add(elm.Dot(open=True).at((xj, yv - 0.7)).label('J4-1 VDD', loc='left'))
+        d.add(elm.Dot(open=True).at((xj + 1.2, yv - 0.7)).label('J4-3 GND', loc='right'))
+        L((xj + 1.2, yv - 0.7), (xj + 1.2, YG)); dot((xj + 1.2, YG))
 
         # PA5 (AC0 OUT) -> PA2 (asinhroni prekid)
         xa5 = u2.PA5[0] + 1.0
