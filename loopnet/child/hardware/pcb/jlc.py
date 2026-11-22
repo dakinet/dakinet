@@ -4,7 +4,7 @@
 Pokreni posle build.sh:  python3.12 jlc.py
 Kolona „Provera“: S = broj viđen na LCSC/JLC stranici u rezultatima web pretrage (jlcpcb.com/lcsc.com nisu
 dostupni iz kontejnera, pa ništa nije otvoreno direktno), M = isti deo već je u BOM-u apollo-loop-driver,
-? = NIJE potvrđeno – pre narudžbine proveri u JLC katalogu (navedena je preporučena oznaka proizvođača).
+? = NIJE potvrđeno. Napomena počinje sa B (JLC Basic, prema listi basic delova sa GitHub-a cpldcpu/TouchSynth) ili E (Extended) – pre narudžbine proveri u JLC katalogu (navedena je preporučena oznaka proizvođača).
 """
 import csv, os, re, subprocess, sys, zipfile
 sys.path.insert(0, '/usr/lib/python3/dist-packages')
@@ -18,31 +18,31 @@ TB = 'TerminalBlock_Phoenix_PT-1,5-2-3.5-H_1x02_P3.50mm_Horizontal'
 
 # (vrednost, otisak) -> (LCSC, proizvođač i oznaka, provera, napomena)
 LCSC = {
-    ('ATtiny1616-MNR', 'VQFN-20-1EP_3x3mm_P0.4mm_EP1.7x1.7mm'): ('C507118', 'Microchip ATTINY1616-MNR', 'S', 'ne C1338523 (-MFR)'),
-    ('TPS7B8133DRV', 'WSON-6-1EP_2x2mm_P0.65mm_EP1x1.6mm'): ('C2876250', 'TI TPS7B8133DRVR', 'S', 'ne Q1 varijanta C2864449'),
-    ('BAV99', 'SOT-23'): ('C2500', 'Nexperia BAV99,215', 'S', 'basic; 100 V'),
-    ('MMBT5551', 'SOT-23'): ('C2145', 'JSCJ MMBT5551', 'S', '160 V'),
-    ('MMBT3904', 'SOT-23'): ('C20526', 'CJ MMBT3904', 'M', ''),
-    ('BCX56-16', 'SOT-89-3'): ('C713686', 'LGE BCX56-16', 'S', '80 V 1 A; raspored 1 = E, 2/tab = C, 3 = B (Nexperia) - proveri za LGE'),
-    ('SMAJ40A', 'D_SMA'): ('C3719895', 'Taiwan Semi SMAJ40A', 'S', 'unidirekciona, V_BR 44,4 V'),
-    ('BZT52C10', 'D_SOD-123'): ('C2103', 'JSCJ BZT52C10', 'S', '500 mW'),
-    ('LED', 'LED_0603_1608Metric'): ('C72043', 'Everlight 19-217/GHC-YR1S2/3T', 'S', 'zelena'),
-    ('TASTER', 'SW_Push_1P1T_XKB_TS-1187A'): ('C318884', 'XKB TS-1187A-B-A-B', 'M', ''),
-    ('10u/25V', C0805): ('C15850', 'Samsung CL21A106KAYNNNE', 'M', 'X5R 25 V'),
-    ('100n', C0402): ('C1525', 'Samsung CL05B104KO5NNNC', 'S', 'basic, 16 V'),
-    ('10n', C0402): ('', 'Samsung CL05B103KB5NNNC', '?', 'X7R 50 V'),
-    ('1n', C0402): ('', 'Samsung CL05B102KB5NNNC', '?', 'X7R 50 V'),
-    ('1k', R0402): ('C11702', 'UNI-ROYAL 0402WGF1001TCE', 'S', 'basic'),
-    ('2k2', R0402): ('C25879', 'UNI-ROYAL 0402WGF2201TCE', 'S', ''),
-    ('100k', R0402): ('C25741', 'UNI-ROYAL 0402WGF1003TCE', 'S', 'bilo nema na stanju'),
-    ('330k', R0402): ('', 'UNI-ROYAL 0402WGF3303TCE', '?', '1 %'),
-    ('240', R0402): ('', 'UNI-ROYAL 0402WGF2400TCE', '?', '1 %; odredjuje 10 mA odgovora'),
-    ('3k3', R0402): ('', 'UNI-ROYAL 0402WGF3301TCE', '?', '1 %; odredjuje I_CC'),
-    ('2M2', R0603): ('', 'UNI-ROYAL 0603WAF2204T5E', '?', '75 V'),
-    ('4M7', R0603): ('', 'UNI-ROYAL 0603WAF4704T5E', '?', '75 V; na liniji'),
+    # Basic (B) = bez naknade za učitavanje; Extended (E) = 3 USD po vrsti dela
+    ('ATtiny1616-MNR', 'VQFN-20-1EP_3x3mm_P0.4mm_EP1.7x1.7mm'): ('C507118', 'Microchip ATTINY1616-MNR', 'S', 'E; nema Basic zamene'),
+    ('HT7533-1', 'SOT-89-3'): ('C14289', 'Holtek HT7533-1', 'S', 'B; 1 GND, 2 VIN, 3 VOUT - PROVERI datasheet (klonovi imaju drugi raspored)'),
+    ('BAV99', 'SOT-23'): ('C2500', 'Nexperia BAV99,215', 'S', 'B'),
+    ('MMBT5551', 'SOT-23'): ('C2145', 'JSCJ MMBT5551', 'S', 'B; 160 V'),
+    ('MMBT3904', 'SOT-23'): ('C20526', 'CJ MMBT3904', 'M', 'B'),
+    ('SMAJ40A', 'D_SMA'): ('C3719895', 'Taiwan Semi SMAJ40A', 'S', 'E; nema Basic TVS 40 V'),
+    ('BZT52C10', 'D_SOD-123'): ('C2103', 'JSCJ BZT52C10', 'S', 'E; nema Basic zener'),
+    ('LED', 'LED_0603_1608Metric'): ('C2286', 'Hubei KENTO KT-0603R', 'S', 'B; crvena'),
+    ('TASTER', 'SW_Push_1P1T_XKB_TS-1187A'): ('C318884', 'XKB TS-1187A-B-A-B', 'M', 'B'),
+    ('10u/25V', C0805): ('C15850', 'Samsung CL21A106KAYNNNE', 'M', 'B; X5R 25 V'),
+    ('100n', C0402): ('C1525', 'Samsung CL05B104KO5NNNC', 'S', 'B'),
+    ('10n', C0402): ('C15195', 'Samsung CL05B103KB5NNNC', 'S', 'B'),
+    ('1n', C0402): ('C1523', 'FH 0402B102K500NT', 'S', 'B'),
+    ('1k', R0402): ('C11702', 'UNI-ROYAL 0402WGF1001TCE', 'S', 'B'),
+    ('2k2', R0402): ('C25879', 'UNI-ROYAL 0402WGF2201TCE', 'S', 'B'),
+    ('3k3', R0402): ('C25890', 'UNI-ROYAL 0402WGF3301TCE', 'S', 'B; odredjuje I_CC'),
+    ('100k', R0402): ('C25741', 'UNI-ROYAL 0402WGF1003TCE', 'S', 'B'),
+    ('330k', R0603): ('C23137', 'UNI-ROYAL 0603WAF3303T5E', 'S', 'B'),
+    ('270', R0603): ('C22966', 'UNI-ROYAL 0603WAF2700T5E', 'S', 'B; odredjuje ~9,4 mA odgovora'),
+    ('1M', R0603): ('C22935', 'UNI-ROYAL 0603WAF1004T5E', 'S', 'B'),
+    ('4M7', R0603): ('C23163', 'UNI-ROYAL 0603WAF4704T5E', '?', 'E; nema Basic >1 MOhm (1M bi trosio +25 µA)'),
 }
 for v in ('LINIJA ULAZ', 'LINIJA IZLAZ', 'ULAZ'):
-    LCSC[(v, TB)] = ('C474892', 'Kefa KF350-3.5-2P', 'S', 'THT 3,5 mm; uporedi crtež sa Phoenix PT 1,5/2-3,5-H')
+    LCSC[(v, TB)] = ('C474892', 'Kefa KF350-3.5-2P', 'S', 'E; THT 3,5 mm; uporedi crtež sa Phoenix PT 1,5/2-3,5-H')
 # ne montira JLC
 RUCNO = {'J4': 'UPDI: rupe 1,27 mm, ne montira se (pogo ili zalemljene žice)'}
 

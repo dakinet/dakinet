@@ -17,6 +17,14 @@ uvezi_ses = _ns['uvezi_ses']
 b = pcbnew.LoadBoard(IME + '.kicad_pcb')
 uvezi_ses(b, IME + '.ses')
 gnd = b.FindNet('GND')
+# Freerouting ne poštuje razmak do ivice ploče: GND vodove bliže od 0,35 mm ivici brišemo (masu povezuju površine)
+uk = 0
+for t in [t for t in b.GetTracks() if t.GetClass() == 'PCB_TRACK' and t.GetNetname() == 'GND']:
+    pts = [t.GetStart(), t.GetEnd()]
+    w2 = pcbnew.ToMM(t.GetWidth()) / 2
+    if any(min(pcbnew.ToMM(q.x) - 100, 130 - pcbnew.ToMM(q.x), pcbnew.ToMM(q.y) - 100, 120 - pcbnew.ToMM(q.y)) - w2 < 0.35 for q in pts):
+        b.Remove(t); uk += 1
+print('GND vodova uz ivicu uklonjeno:', uk)
 OKVIR = [(100.25, 100.25), (129.75, 100.25), (129.75, 119.75), (100.25, 119.75)]
 
 
@@ -26,7 +34,7 @@ def zona(net, tacke, layer):
     z.SetNet(net)
     z.SetLocalClearance(MM(0.25))
     z.SetMinThickness(MM(0.2))
-    z.SetPadConnection(pcbnew.ZONE_CONNECTION_THERMAL)
+    z.SetPadConnection(pcbnew.ZONE_CONNECTION_FULL)   # mala ploča, montaža reflow: puna veza, bez „starved thermal“
     z.SetIslandRemovalMode(pcbnew.ISLAND_REMOVAL_MODE_ALWAYS)
     z.SetThermalReliefGap(MM(0.25))
     z.SetThermalReliefSpokeWidth(MM(0.3))

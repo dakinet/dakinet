@@ -6,9 +6,9 @@ Izlaz:       loopnet_1in.kicad_pcb (raspored + mreže, bez vodova) i loopnet_1in
 Raspored pinova proveren po datasheet-ovima (vidi ../../README.md, „Provera pinova“):
   ATtiny1616 VQFN-20: 1 PA2, 2 PA3, 3 GND, 4 VDD, 5 PA4, 6 PA5, 7 PA6, 8 PA7, 9 PB5, 10 PB4, 11 PB3, 12 PB2,
                       13 PB1, 14 PB0, 15 PC0, 16 PC1, 17 PC2, 18 PC3, 19 PA0/UPDI, 20 PA1, EP (21) -> GND
-  TPS7B8133 DRV (WSON-6): 1 IN, 2 EN, 3 GND, 4 GND, 5 DNC (na GND), 6 OUT, termalni pad -> GND
+  (v0.1 je imao TPS7B8133 DRV; zamenjen JLC Basic delom HT7533-1)
   BAV99 (SOT-23): 1 anoda D1, 2 katoda D2, 3 katoda D1 = anoda D2
-  MMBT5551 / MMBT3904 (SOT-23): 1 B, 2 E, 3 C;   BCX56 (SOT-89, Nexperia): 1 E, 2 C (i tab), 3 B
+  MMBT5551 / MMBT3904 (SOT-23): 1 B, 2 E, 3 C;   HT7533-1 (SOT-89, Holtek): 1 GND, 2 VIN (i tab), 3 VOUT - NIJE provereno u datasheet-u
   SMAJ40A (SMA) i BZT52C10 (SOD-123): pad 1 = katoda
 """
 import sys
@@ -39,15 +39,15 @@ P = {
     'D2': (SOT23, 'BAV99', {'1': 'GND', '2': 'VP', '3': 'LB'}),
     'D3': (('Diode_SMD', 'D_SMA'), 'SMAJ40A', {'1': 'VP', '2': 'GND'}),
     # ---- izvor konstantne struje ~180 µA: I = Vbe(Q2)/R2 + VP/R1
-    'R1': (R0603, '2M2', {'1': 'VP', '2': 'QB'}),
+    'R1': (R0603, '1M', {'1': 'VP', '2': 'QB'}),
     'Q1': (SOT23, 'MMBT5551', {'1': 'QB', '2': 'QE', '3': 'VP'}),
     'R2': (R0402, '3k3', {'1': 'QE', '2': 'VC'}),
     'Q2': (SOT23, 'MMBT3904', {'1': 'QE', '2': 'VC', '3': 'QB'}),
     'D4': (('Diode_SMD', 'D_SOD-123'), 'BZT52C10', {'1': 'VC', '2': 'GND'}),
     'C1': (C0805, '10u/25V', {'1': 'VC', '2': 'GND'}),
     # ---- 3,3 V
-    'U1': (('Package_SON', 'WSON-6-1EP_2x2mm_P0.65mm_EP1x1.6mm'), 'TPS7B8133DRV',
-           {'1': 'VC', '2': 'VC', '3': 'GND', '4': 'GND', '5': 'GND', '6': 'VDD', '7': 'GND'}),
+    'U1': (('Package_TO_SOT_SMD', 'SOT-89-3'), 'HT7533-1',          # Holtek: 1 GND, 2 VIN (+tab), 3 VOUT
+           {'1': 'GND', '2': 'VC', '3': 'VDD'}),
     'C2': (C0805, '10u/25V', {'1': 'VDD', '2': 'GND'}),
     'C3': (C0402, '100n', {'1': 'VDD', '2': 'GND'}),
     # ---- MCU
@@ -58,11 +58,11 @@ P = {
     # ---- prijem: delitelj sa obe žice pre mosta, prag na kondenzatoru (DAC0 sample-hold)
     'R3': (R0603, '4M7', {'1': 'LA', '2': 'LINE'}),
     'R4': (R0603, '4M7', {'1': 'LB', '2': 'LINE'}),
-    'R5': (R0402, '330k', {'1': 'LINE', '2': 'GND'}),
+    'R5': (R0603, '330k', {'1': 'LINE', '2': 'GND'}),
     'C4': (C0402, '10n', {'1': 'VTHR', '2': 'GND'}),
     # ---- odgovor: 10 mA ponor
-    'Q3': (('Package_TO_SOT_SMD', 'SOT-89-3'), 'BCX56-16', {'1': 'QSE', '2': 'VP', '3': 'QSB'}),
-    'R6': (R0402, '240', {'1': 'QSE', '2': 'GND'}),
+    'Q3': (SOT23, 'MMBT5551', {'1': 'QSB', '2': 'QSE', '3': 'VP'}),
+    'R6': (R0603, '270', {'1': 'QSE', '2': 'GND'}),
     'R7': (R0402, '1k', {'1': 'SINK', '2': 'QSB'}),
     'R8': (R0402, '100k', {'1': 'QSB', '2': 'GND'}),
     # ---- ulaz kontakta (EOL), LED, taster, UPDI
@@ -83,9 +83,9 @@ POZ = {
     'R3': (122.55, 109.9, 90), 'R4': (124.05, 109.9, 90),
     'Q1': (109.75, 102.0, 0), 'R1': (110.0, 104.9, 0), 'Q2': (113.65, 102.0, 0), 'R2': (113.6, 104.6, 0),
     'D4': (109.0, 108.9, 90), 'C1': (116.55, 102.3, 90),
-    'U1': (116.6, 105.35, 0), 'C2': (118.55, 102.3, 90), 'C3': (119.3, 107.9, 90),
-    'U2': (121.65, 104.4, 0), 'R5': (120.9, 107.6, 0), 'C4': (120.9, 108.8, 0),
-    'Q3': (113.0, 108.9, 0), 'R6': (117.0, 110.2, 0), 'R7': (117.0, 108.0, 0), 'R8': (117.0, 109.1, 0),
+    'U1': (113.0, 108.9, 0), 'C2': (118.55, 102.3, 90), 'C3': (119.3, 108.4, 90),
+    'U2': (121.65, 104.4, 0), 'R5': (121.3, 107.6, 0), 'C4': (120.9, 108.9, 0),
+    'Q3': (117.3, 105.72, 0), 'R6': (117.1, 110.35, 0), 'R7': (117.0, 108.0, 0), 'R8': (117.0, 109.1, 0),
     'R9': (118.0, 112.6, 90), 'R10': (119.2, 112.6, 90), 'C5': (118.6, 114.9, 0),
     'R11': (105.7, 109.9, 0), 'D5': (102.5, 109.9, 0),
     'SW1': (126.95, 104.0, 90), 'J4': (126.0, 109.6, 90),
@@ -111,7 +111,7 @@ BLOKOVI = [
 # Unapred zadati (zaključani) vodovi i via: (mreža, [(sloj, x1, y1, x2, y2, širina)], [via]).
 # Via u centralnim padovima MCU (U2) i LDO (U1) postavljaju se pre rutiranja da ih Freerouting zaobiđe.
 PREVODI = [
-    ('GND', [], [(121.65, 104.4), (116.6, 105.35)]),
+    ('GND', [], [(121.65, 104.4)]),
 ]
 
 X0, Y0, X1, Y1 = 100, 100, 130, 120
@@ -213,6 +213,16 @@ def napravi():
             v = pcbnew.PCB_VIA(b)
             v.SetPosition(pcbnew.VECTOR2I(MM(x), MM(y))); v.SetDrill(MM(0.3)); v.SetWidth(MM(0.6))
             v.SetLayerPair(pcbnew.F_Cu, pcbnew.B_Cu); v.SetNet(n); v.SetLocked(True); b.Add(v)
+    # pojas 0,35 mm uz ivicu bez vodova i via (Freerouting ne poznaje razmak bakra do ivice)
+    for (ax, ay, bx, by) in [(X0, Y0, X1, Y0 + 0.35), (X0, Y1 - 0.35, X1, Y1), (X0, Y0, X0 + 0.35, Y1), (X1 - 0.35, Y0, X1, Y1)]:
+        kz = pcbnew.ZONE(b)
+        kz.SetIsRuleArea(True); kz.SetDoNotAllowTracks(True); kz.SetDoNotAllowVias(True)
+        kz.SetDoNotAllowCopperPour(False); kz.SetDoNotAllowPads(False); kz.SetDoNotAllowFootprints(False)
+        ls = pcbnew.LSET(); ls.AddLayer(pcbnew.F_Cu); ls.AddLayer(pcbnew.B_Cu); kz.SetLayerSet(ls)
+        o = kz.Outline(); o.NewOutline()
+        for x, y in [(ax, ay), (bx, ay), (bx, by), (ax, by)]:
+            o.Append(MM(x), MM(y))
+        b.Add(kz)
     ds.SetBoardThickness(MM(1.6))
     return b, nets
 

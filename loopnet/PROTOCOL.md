@@ -16,7 +16,7 @@ Uređaj je „LoopNet 1IN“ (`child/`): ATtiny1616, jedan ulaz sa EOL otpornici
 | # | v0.1 | v0.2 | Razlog |
 |---|---|---|---|
 | 1 | Bitovi kodirani **širinom** impulsa, odgovor od **silazne** ivice | Bitovi kodirani **periodom između uzlaznih ivica**; sva vremena uređaja mere se od uzlazne ivice | Izlaz mastera je emiter-sledilac (TIP122) **bez aktivnog spuštanja**: silazna ivica traje C_kabla·ΔU / I_opterećenja – 35 µs pri 120 uređaja, ali > 250 µs pri 10 uređaja na 1 km. Uzlaznu ivicu master gura aktivno (~20 µs, nezavisno od opterećenja). |
-| 2 | Uređaj troši „do 200 µA“, zavisno od trenutka | Uređaj vuče sa linije **konstantnu struju** I_CC ≈ 180 µA (izvor struje + Zener), nezavisno od napona i od rada MCU-a | Prag mastera je „struja mirovanja + 5 mA“. Kad bi uređaji punili kondenzatore samo na 31 V (vršni detektor), osnovna struja bi u prozorima skakala do 120 × 0,5 mA = 60 mA i prag bi bio pogrešan. Konstantna struja = mirna osnovna linija i nema strujnih udara na ivicama. |
+| 2 | Uređaj troši „do 200 µA“, zavisno od trenutka | Uređaj vuče sa linije **konstantnu struju** I_CC ≈ 195 µA (izvor struje + Zener), nezavisno od napona i od rada MCU-a | Prag mastera je „struja mirovanja + 5 mA“. Kad bi uređaji punili kondenzatore samo na 31 V (vršni detektor), osnovna struja bi u prozorima skakala do 120 × 0,5 mA = 60 mA i prag bi bio pogrešan. Konstantna struja = mirna osnovna linija i nema strujnih udara na ivicama. |
 | 3 | Fiksni prozor 100 µs (30 + 70) | Prozor T_W = 150 µs podrazumevano, master ga bira 150–400 µs; uređaj ga meri u prozoru 0 | 100 µs ne ostavlja mesta za silaznu ivicu + smirivanje strujne petlje mastera; T_W se produžava kod dugog kabla i malog opterećenja. |
 | 4 | Prozori 0–255, „0, 1, 254, 255 se ne koriste“, ali 2N+1 za N=126 je 253 | Prozor 0 = referentni (niko ne odgovara); uređaj N koristi **2N−1** i **2N** (N = 1…127) → prozori 1…254 | Doslednost brojanja; par za adresu 127 otkriva nedodeljene uređaje; prozor 0 daje master-u proveru praga i uređaju meru T_W. |
 | 5 | Zaglavlje „~2,75 ms“ | 2,85 ms prosečno, najviše 3,4 ms (§2) | Ponovo sabrano. |
@@ -34,7 +34,7 @@ Uređaj je „LoopNet 1IN“ (`child/`): ATtiny1616, jedan ulaz sa EOL otpornici
 | Osnovni nivo (mirovanje, pauza) | 24,2 V na masteru |
 | Impuls master → uređaj | +7,0 V (31,2 V); uzlazna ivica 10–90 % ≈ 20 µs (VSET τ ≈ 9 µs), aktivno |
 | Silazna ivica | pasivna: pražnjenje kabla kroz opterećenje, t ≈ C·ΔU/I (§1.3) |
-| Potrošnja uređaja | **konstantna** I_CC ≈ 180 µA (165–200 µA za 0–50 °C: izvor Vbe/R sa dva NPN + delitelj prijema), ne zavisi od rada MCU-a; između 24 i 31 V raste ~3 µA |
+| Potrošnja uređaja | **konstantna** I_CC ≈ 195 µA (180–215 µA za 0–50 °C: izvor Vbe/R sa dva NPN + delitelj prijema), ne zavisi od rada MCU-a; između 24 i 31 V raste ~7 µA |
 | Odgovor uređaj → master | dodatni strujni ponor **10 mA ±20 %** (konstantna struja, NPN + R_E) |
 | Najmanji napon na uređaju | 15 V u osnovnom nivou (14,3 V za vreme sopstvenog odgovora) |
 | Adrese | 1–126 radne; 0 = broadcast; 127 = nedodeljena (fabričko stanje) |
