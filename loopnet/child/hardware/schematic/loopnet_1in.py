@@ -104,7 +104,7 @@ def list1(fname):
         xs = 22.0
         d.add(T(1.6).left().at((xs, yr + 1.6)).label('VP'))
         d.add(elm.Line().right(3.0).at((xs, yr + 1.6))); cq = d.here
-        q3 = d.add(elm.BjtNpn(circle=True).anchor('collector').at((cq[0], cq[1] - 0.8)).label('Q3\nBCX56-16', loc='right', ofst=(0.3, 0.6)))
+        q3 = d.add(elm.BjtNpn(circle=True).anchor('collector').at((cq[0], cq[1] - 0.8)).label('Q3 BCX56-16\n1 E, 2 C, 3 B', loc='right', ofst=(0.3, 0.6)))
         d.add(elm.Line().at(cq).to(q3.collector))
         d.add(elm.Line().down(0.6).at(q3.emitter))
         r6 = d.add(elm.Resistor().down(2.2).label('R6\n240', loc='bottom')); gnd(d, r6.end)
@@ -121,7 +121,7 @@ def list2(fname):
         d.config(unit=2)
         L = [('PA6', '7', 'VTHR (DAC0 / AC0−)'), ('PA3', '2', 'IN_DRV'), ('PA4', '5', 'IN_SENSE (AIN4)'),
              ('PA7', '8', 'LINE (AC0+ / AIN7)'), ('PA0', '19', 'UPDI')]
-        R = [('PB0', '14', 'SINK'), ('PB1', '13', 'LED'), ('PB2', '12', 'BTN'), ('PA5', '6', 'AC0 OUT (n.c.)')]
+        R = [('PB0', '14', 'SINK'), ('PB1', '13', 'LED'), ('PB2', '12', 'BTN'), ('PA2', '1', 'AC_OUT (prekid)'), ('PA5', '6', 'AC_OUT (AC0 OUT)')]
         pins = [elm.IcPin(name=n, pin=p, side='left', slot='%d/%d' % (i + 1, len(L))) for i, (n, p, _) in enumerate(L)]
         pins += [elm.IcPin(name=n, pin=p, side='right', slot='%d/%d' % (i + 1, len(R))) for i, (n, p, _) in enumerate(R)]
         pins += [elm.IcPin(name='VDD', pin='4', side='top'), elm.IcPin(name='GND', pin='3, EP', side='bottom')]
@@ -139,7 +139,7 @@ def list2(fname):
         for n, p, t in R:
             d.add(elm.Line().right(1.0).at(getattr(u, n)))
             d.add(T(3.6).right().label(t))
-        d.add(elm.Label().at((-1.5, -7.6)).label('PA1, PA2, PB3–PB5, PC0–PC3: nepovezani (ulaz sa pull-up)'))
+        d.add(elm.Label().at((-1.5, -7.6)).label('PA5 (AC0 OUT) je vodom vezan na PA2: AC u STANDBY-u ne postavlja prekid,\nali menja OUT pin, a PA2 ima potpuno asinhronu detekciju ivice i budi CPU.\nPA1, PB3–PB5, PC0–PC3: nepovezani (ulaz sa pull-up)'))
 
         # ulaz EOL
         x0, y0 = 14.0, 2.0

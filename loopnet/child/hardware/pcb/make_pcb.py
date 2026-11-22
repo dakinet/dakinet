@@ -8,7 +8,7 @@ Raspored pinova proveren po datasheet-ovima (vidi ../../README.md, „Provera pi
                       13 PB1, 14 PB0, 15 PC0, 16 PC1, 17 PC2, 18 PC3, 19 PA0/UPDI, 20 PA1, EP (21) -> GND
   TPS7B8133 DRV (WSON-6): 1 IN, 2 EN, 3 GND, 4 GND, 5 DNC (na GND), 6 OUT, termalni pad -> GND
   BAV99 (SOT-23): 1 anoda D1, 2 katoda D2, 3 katoda D1 = anoda D2
-  MMBT5551 / MMBT3904 (SOT-23): 1 B, 2 E, 3 C;   BCX56 (SOT-89): 1 B, 2 C (i tab), 3 E
+  MMBT5551 / MMBT3904 (SOT-23): 1 B, 2 E, 3 C;   BCX56 (SOT-89, Nexperia): 1 E, 2 C (i tab), 3 B
   SMAJ40A (SMA) i BZT52C10 (SOD-123): pad 1 = katoda
 """
 import sys
@@ -53,14 +53,15 @@ P = {
     # ---- MCU
     'U2': (('Package_DFN_QFN', 'VQFN-20-1EP_3x3mm_P0.4mm_EP1.7x1.7mm'), 'ATtiny1616-MNR',
            {'2': 'IN_DRV', '3': 'GND', '4': 'VDD', '5': 'IN_SENSE', '7': 'VTHR', '8': 'LINE',
-            '12': 'BTN', '13': 'LED', '14': 'SINK', '19': 'UPDI', '21': 'GND'}),
+            '12': 'BTN', '13': 'LED', '14': 'SINK', '19': 'UPDI', '21': 'GND',
+            '6': 'AC_OUT', '1': 'AC_OUT'}),   # AC0 OUT (PA5) -> PA2: asinhroni prekid budi CPU iz STANDBY-a
     # ---- prijem: delitelj sa obe žice pre mosta, prag na kondenzatoru (DAC0 sample-hold)
     'R3': (R0603, '4M7', {'1': 'LA', '2': 'LINE'}),
     'R4': (R0603, '4M7', {'1': 'LB', '2': 'LINE'}),
     'R5': (R0402, '330k', {'1': 'LINE', '2': 'GND'}),
     'C4': (C0402, '10n', {'1': 'VTHR', '2': 'GND'}),
     # ---- odgovor: 10 mA ponor
-    'Q3': (('Package_TO_SOT_SMD', 'SOT-89-3'), 'BCX56-16', {'1': 'QSB', '2': 'VP', '3': 'QSE'}),
+    'Q3': (('Package_TO_SOT_SMD', 'SOT-89-3'), 'BCX56-16', {'1': 'QSE', '2': 'VP', '3': 'QSB'}),
     'R6': (R0402, '240', {'1': 'QSE', '2': 'GND'}),
     'R7': (R0402, '1k', {'1': 'SINK', '2': 'QSB'}),
     'R8': (R0402, '100k', {'1': 'QSB', '2': 'GND'}),

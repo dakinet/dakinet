@@ -175,7 +175,7 @@ Ispravan uređaj daje tačno jedan impuls po paru. Master tumači:
 
 ### 6.1 Spavanje
 
-- Između okvira: STANDBY, rade samo AC0 (low-power) i RTC/PIT (10 ms za ulaz i osvežavanje praga). Buđenje uzlaznom ivicom; ako linija posle 300 µs i dalje stoji na 31 V → START.
+- Između okvira: STANDBY, rade samo AC0 (low-power) i RTC/PIT (10 ms za ulaz i osvežavanje praga). AC0 u STANDBY-u ne budi CPU sam (bez CLK_PER ne postavlja prekid), pa njegov izlaz PA5 ide vodom na PA2 (asinhroni prekid pina). Buđenje uzlaznom ivicom; ako linija posle 300 µs i dalje stoji na 31 V → START.
 - U okviru: IDLE, TCB meri periode hardverski; CPU se budi na svakoj uzlaznoj ivici zaglavlja.
 - SKEN/DOGAĐAJI: posle zaglavlja TCA0 broji uzlazne ivice (događaj iz AC0) do prozora 2N−2, CPU spava; budi se samo za svoj par.
 - Okvir koji nije za uređaj: CPU gasi buđenje i spava do procenjenog kraja okvira (K × T_W − 10 %), zatim ponovo čeka START.

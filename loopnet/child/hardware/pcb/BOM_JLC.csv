@@ -13,7 +13,7 @@ ULAZ,J3,"TerminalBlock_Phoenix_PT-1,5-2-3.5-H_1x02_P3.50mm_Horizontal",C474892,K
 UPDI,J4,PinHeader_1x03_P1.27mm_Vertical,,,,"UPDI: rupe 1,27 mm, ne montira se (pogo ili zalemljene žice)"
 MMBT5551,Q1,SOT-23,C2145,JSCJ MMBT5551,S,160 V
 MMBT3904,Q2,SOT-23,C20526,CJ MMBT3904,M,
-BCX56-16,Q3,SOT-89-3,C713686,LGE BCX56-16,S,"80 V 1 A; proveri 1 = B, 2/tab = C, 3 = E"
+BCX56-16,Q3,SOT-89-3,C713686,LGE BCX56-16,S,"80 V 1 A; raspored 1 = E, 2/tab = C, 3 = B (Nexperia) - proveri za LGE"
 2M2,R1,R_0603_1608Metric,,UNI-ROYAL 0603WAF2204T5E,?,75 V
 3k3,R2,R_0402_1005Metric,,UNI-ROYAL 0402WGF3301TCE,?,1 %; odredjuje I_CC
 4M7,"R3,R4",R_0603_1608Metric,,UNI-ROYAL 0603WAF4704T5E,?,75 V; na liniji

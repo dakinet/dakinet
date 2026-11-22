@@ -22,6 +22,7 @@ firmware/             C za ATtiny1616 (avr-gcc): ln_proto.c (dekoder okvira), cr
 | Prag | C4 10 nF na PA6 (AC0−), puni ga DAC0 ~50 µs svakih 10 ms | osnovni nivo (ADC na PA7) + 3,5 V |
 | Odgovor | Q3 BCX56-16, R6 240 Ω, R7 1k, R8 100k | (3,3 − 0,1 − 0,7) V / 240 Ω ≈ 10 mA iz VP, samo za vreme odgovora |
 | Ulaz | J3, R9 2k2 sa PA3 (uključen ~50 µs), R10 1k + C5 1 nF → PA4 (ADC) | EOL 2k2 serijski + 2k2 paralelno kontaktu |
+| Buđenje | PA5 (AC0 OUT) vodom na PA2 | AC0 u STANDBY-u ne postavlja zastavicu ni prekid (samo OUT pin i događaj); PA2 ima potpuno asinhronu detekciju ivice i budi CPU |
 | Ostalo | D5 LED + R11 1k (PB1), SW1 taster (PB2, interni pull-up), J4 UPDI 1,27 mm (VDD, PA0, GND) | |
 
 ## Odstupanja od zadatih delova (i zašto)
@@ -36,11 +37,11 @@ firmware/             C za ATtiny1616 (avr-gcc): ln_proto.c (dekoder okvira), cr
 
 | Deo | Raspored korišćen u `make_pcb.py` | Izvor |
 |---|---|---|
-| ATtiny1616-MNR (VQFN-20) | 1 PA2, 2 PA3, 3 GND, 4 VDD, 5 PA4, 6 PA5, 7 PA6, 8 PA7, 9 PB5, 10 PB4, 11 PB3, 12 PB2, 13 PB1, 14 PB0, 15–18 PC0–PC3, 19 PA0/UPDI, 20 PA1, EP → GND | Microchip DS40001997C, tabela 5-1 i §4.2 (PDF pročitan). AC0: PA7 = AINP0, PA6 = AINN0 (i DAC0 OUT), PA5 = AC0 OUT; ADC0: PA4 = AIN4, PA7 = AIN7 |
+| ATtiny1616-MNR (VQFN-20) | 1 PA2 (← AC_OUT), 2 PA3, 3 GND, 4 VDD, 5 PA4, 6 PA5, 7 PA6, 8 PA7, 9 PB5, 10 PB4, 11 PB3, 12 PB2, 13 PB1, 14 PB0, 15–18 PC0–PC3, 19 PA0/UPDI, 20 PA1, EP → GND | Microchip DS40001997C, tabela 5-1 i §4.2 (PDF pročitan), unakrsno sa ATtiny1616.atdf. AC0: PA7 = AINP0, PA6 = AINN0 (i DAC0 OUT), PA5 = AC0 OUT; ADC0: PA4 = AIN4, PA7 = AIN7 |
 | TPS7B8133DRV (WSON-6) | 1 IN, 2 EN, 3 GND, 4 GND, 5 DNC (na GND), 6 OUT, termalni pad GND; C_OUT 1–200 µF | TI SBVS402 (PDF pročitan): „DNC – tie to ground or leave floating“; V_IN 3–40 V; I_Q 2,7 µA tip |
 | BAV99 (SOT-23) | 1 anoda D1, 2 katoda D2, 3 katoda D1/anoda D2 | standardni Nexperia raspored (datasheet nije otvoren – nexperia.com blokiran) |
 | MMBT5551, MMBT3904 (SOT-23) | 1 B, 2 E, 3 C | standardni raspored; MMBT3904 već korišćen u masteru |
-| BCX56-16 (SOT-89) | 1 B, 2 C (+ tab), 3 E | standardni raspored; **proveri u datasheet-u izabranog proizvođača (LGE)** |
+| BCX56-16 (SOT-89) | **1 E, 2 C (+ tab), 3 B** | Nexperia raspored (iz rezultata pretrage, PDF nije otvoren); ispravljeno posle prve verzije – **proveri za izabranog proizvođača (LGE C713686)** |
 | SMAJ40A (SMA), BZT52C10 (SOD-123) | pad 1 = katoda (KiCad konvencija) | katoda na VP odnosno VC |
 | TS-1187A, stezaljke 3,5 mm | 1–1 i 2–2 spojeni u tasteru | isti taster kao u masteru (C318884) |
 

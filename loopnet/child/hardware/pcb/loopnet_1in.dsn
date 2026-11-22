@@ -693,6 +693,9 @@
     (net VDD
       (pins J4-1 U2-4 C3-1 C2-1 U1-6)
     )
+    (net AC_OUT
+      (pins U2-1 U2-6)
+    )
     (net IN_DRV
       (pins R9-1 U2-2)
     )
@@ -717,11 +720,11 @@
     (net UPDI
       (pins J4-2 U2-19)
     )
-    (net QSB
-      (pins R8-1 R7-2 Q3-1)
-    )
     (net QSE
-      (pins R6-1 Q3-3)
+      (pins R6-1 Q3-1)
+    )
+    (net QSB
+      (pins R8-1 R7-2 Q3-3)
     )
     (net LED_A
       (pins D5-2 R11-2)
@@ -744,8 +747,8 @@
         (clearance 300)
       )
     )
-    (class kicad_default "" BTN GND INP IN_DRV IN_SENSE   LED LED_A LINE
-        QSB QSE SINK UPDI VC VDD  VTHR
+    (class kicad_default "" AC_OUT BTN GND INP IN_DRV IN_SENSE   LED LED_A
+      LINE   QSB QSE SINK UPDI VC VDD  VTHR
       (circuit
         (use_via Via[0-1]_600:300_um)
       )

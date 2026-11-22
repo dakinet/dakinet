@@ -23,7 +23,7 @@ LCSC = {
     ('BAV99', 'SOT-23'): ('C2500', 'Nexperia BAV99,215', 'S', 'basic; 100 V'),
     ('MMBT5551', 'SOT-23'): ('C2145', 'JSCJ MMBT5551', 'S', '160 V'),
     ('MMBT3904', 'SOT-23'): ('C20526', 'CJ MMBT3904', 'M', ''),
-    ('BCX56-16', 'SOT-89-3'): ('C713686', 'LGE BCX56-16', 'S', '80 V 1 A; proveri 1 = B, 2/tab = C, 3 = E'),
+    ('BCX56-16', 'SOT-89-3'): ('C713686', 'LGE BCX56-16', 'S', '80 V 1 A; raspored 1 = E, 2/tab = C, 3 = B (Nexperia) - proveri za LGE'),
     ('SMAJ40A', 'D_SMA'): ('C3719895', 'Taiwan Semi SMAJ40A', 'S', 'unidirekciona, V_BR 44,4 V'),
     ('BZT52C10', 'D_SOD-123'): ('C2103', 'JSCJ BZT52C10', 'S', '500 mW'),
     ('LED', 'LED_0603_1608Metric'): ('C72043', 'Everlight 19-217/GHC-YR1S2/3T', 'S', 'zelena'),
