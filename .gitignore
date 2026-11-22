@@ -11,3 +11,9 @@ apollo-loop-module/hardware/pcb/logs/
 apollo-loop-module/hardware/pcb/fr/
 apollo-loop-module/hardware/pcb/*-bak
 apollo-loop-module/hardware/pcb/*.kicad_prl
+apollo-loop-module/hardware/pcb_rucno/logs/
+apollo-loop-module/hardware/pcb_rucno/*.pre
+apollo-loop-module/hardware/pcb_rucno/*-bak
+apollo-loop-module/hardware/pcb_rucno/*.kicad_prl
+apollo-loop-module/hardware/pcb_rucno/__pycache__/
+apollo-loop-module/hardware/pcb/*.pre

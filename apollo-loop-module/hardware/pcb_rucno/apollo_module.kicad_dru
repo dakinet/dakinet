@@ -1,0 +1,10 @@
+(version 1)
+# Mreže do 34 V (boost izlaz, petlja do 31,2 V, TVS stezanje do ~58 V): 0,3 mm.
+# IPC-2221 B4 (spoljni sloj pod maskom, 31-100 V) traži 0,13 mm; 0,3 mm je rezerva (odluka iz HANDOFF.md).
+(rule "34V razmak"
+  (constraint clearance (min 0.3mm))
+  (condition "A.NetName == '+34V' || A.NetName == 'SW' || A.NetName == 'NE' || A.NetName == 'NB' || A.NetName == 'U3OUT' || A.NetName == 'LOOP_DRV' || A.NetName == 'LOOP_OUT' || A.NetName == 'LOOP_IN' || A.NetName == 'PE'"))
+# Pinovi TPS55340 (HTSSOP, korak 0,65 mm) imaju 0,25 mm između padova (SW pored VIN) – izuzetak unutar courtyard-a U1
+(rule "U1 pinovi"
+  (constraint clearance (min 0.2mm))
+  (condition "A.insideCourtyard('U1') && B.insideCourtyard('U1')"))

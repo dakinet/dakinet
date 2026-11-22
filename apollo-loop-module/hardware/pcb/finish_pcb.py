@@ -3,20 +3,23 @@ SES parser je isti kao u apollo-loop-driver/hardware/pcb/finish_pcb.py."""
 import os
 import sys
 sys.path.append('/usr/lib/python3/dist-packages')
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../../apollo-loop-driver/hardware/pcb'))
+OVDE = os.path.dirname(os.path.abspath(__file__))
+MASTER = os.path.join(OVDE, '../../../apollo-loop-driver/hardware/pcb')   # NE ide u sys.path (i on ima make_pcb.py)
+sys.path.insert(0, OVDE)
 import pcbnew
 MM = pcbnew.FromMM
 IME = 'apollo_module'
-from make_pcb import X0, Y0, X1, Y1, POZ  # dimenzije ploče (60 x 45 mm) iz izvora istine
+from make_pcb import X0, Y0, X1, Y1, POZ  # dimenzije ploče (60 x 45 mm) iz izvora istine (modulov make_pcb)
 
 # uvezi_ses iz mastera (modul na uvozu odmah ucitava apollo plocu, pa se funkcija cita iz izvornog teksta)
-_src = open(os.path.join(sys.path[0], 'finish_pcb.py')).read()
+_src = open(os.path.join(MASTER, 'finish_pcb.py'), encoding='utf-8').read()
 _ns = {'pcbnew': pcbnew, 'MM': MM}
 exec(_src[_src.index('def ses_tokens'):_src.index("uvezi_ses(b, 'apollo")], _ns)
 uvezi_ses = _ns['uvezi_ses']
 
 b = pcbnew.LoadBoard(IME + '.kicad_pcb')
-uvezi_ses(b, IME + '.ses')
+if os.path.exists(IME + '.ses'):                 # Freerouting tok; ručni ruter (rutiraj.py) upisuje vodove direktno
+    uvezi_ses(b, IME + '.ses')
 gnd = b.FindNet('GND')
 # Freerouting ne poštuje razmak do ivice ploče: GND vodove bliže od 0,35 mm ivici brišemo (masu povezuju površine)
 uk = 0
