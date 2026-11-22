@@ -47,6 +47,8 @@ Sledeći koraci:
 3. `.kicad_dru` (razmak 0,3 mm za +34V/LOOP mreže), `build.sh`, DRC bez grešaka.
 4. ~~Šema na jednom listu~~ GOTOVO: `apollo-loop-module/hardware/schematic/kompletna.py` (+ `alat.py`) → `.svg/.png`;
    skripta čita `P` iz `make_pcb.py` i proverava povezanost (0 grešaka). Ostaje README, 3D.
+   KiCad šema: `apollo-loop-module/hardware/schematic/kicad/apollo_module.kicad_sch` (KiCad 10, A1), generiše
+   `apollo_sema.py` (+ `raspored.py`, `kisch.py`); netlista iz kicad-cli = P (0 grešaka), ERC 0/0.
 5. Firmver: postojeći `apollo-loop-driver/firmware` + UART komande (umesto USB REPL-a).
 
 ## 4. Napomene o okruženju (cloud sesija)

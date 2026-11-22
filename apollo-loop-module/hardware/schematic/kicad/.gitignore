@@ -1,0 +1,5 @@
+__pycache__/
+*.net
+*.kicad_prl
+*-backups/
+fp-info-cache

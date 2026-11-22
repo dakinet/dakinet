@@ -16,11 +16,12 @@ ACC = '#b4441f'      # boja oznaka mreža
 SIVA = '#555555'
 
 
-def ucitaj_P():
+def ucitaj_P(fp=''):
+    """fp: putanja KiCad footprint biblioteka – bira imena footprint-ova kao make_pcb.py (KiCad 7 ili 9/10)."""
     src = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'pcb', 'make_pcb.py')
     s = open(src, encoding='utf-8').read()
     a, b = s.index('R0603 ='), s.index('# delovi sa donje')
-    ns = {'os': os, 'FP': ''}
+    ns = {'os': os, 'FP': fp}
     exec(s[a:b], ns)            # samo konstante i rečnik P, bez pcbnew
     return ns['P']
 
