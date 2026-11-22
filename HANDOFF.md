@@ -74,4 +74,6 @@ Sledeći koraci:
 - BOM/CPL: `jlc.py` → `BOM_JLC.csv`, `CPL_JLC.csv`, `bom.csv` (55 stavki, 102 dela; J1 se lemi ručno). LCSC brojevi
   označeni S/M/?; nepotvrđeni: L1 (LCSC ima SRN6045 bez TA, 1,4 A), L2 (zamena 3L SNR4018K-150M, 0,92 A), 15 pF (C1644).
 - **Proveriti pre narudžbine:** stanje i cene u JLC katalogu (TPS560430 ~300-400 kom), tented via ispod
-  RP2040 (JLC opcija „tented vias“), varijanta maske HTSSOP footprinta za TPS55340 (PWP0014A) – neprovereno.
+  RP2040 (JLC opcija „tented vias“).
+- TPS55340PWPR = TI PWP0014K (crtež 4229706/B, datasheet SLVSBD4E): bakar 3,4×5 se slaže; maska i pasta footprint-a
+  bile su veće od pada (3,155×3,255 / 2,9×2,89) – `finish_pcb.py` ih svodi na TI 2,6×2,59 (pasta 4 × 1,2×1,195).

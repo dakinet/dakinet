@@ -144,4 +144,20 @@ pcbnew.ZONE_FILLER(b).Fill(b.Zones())
 print('GND via za šivenje:', n, 'uklonjeno nepovezanih:', ukl, 'via za ostrva:', ostrva)
 print('vodova:', len([t for t in b.GetTracks() if t.GetClass() == 'PCB_TRACK']),
       'via:', len([t for t in b.GetTracks() if t.GetClass() == 'PCB_VIA']))
+# U1 TPS55340PWP (TI PWP0014K, crtež 4229706/B): izloženi pad kućišta najviše 2,6 x 2,59 mm; TI land pattern:
+# bakar 3,4 x 5, otvor maske 2,6 x 2,59 (definisan maskom), pasta do 2,6 x 2,59. Footprint iz biblioteke ima masku
+# 3,155 x 3,255 i pastu 2,9 x 2,89 (veće od pada) – svodi se na TI vrednosti (lokalne koordinate footprint-a).
+u1 = b.FindFootprintByReference('U1')
+for p in u1.Pads():
+    if p.GetNumber() != '':
+        continue
+    lay = p.GetLayerSet()
+    if lay.Contains(pcbnew.F_Mask):
+        p.SetSize(pcbnew.F_Cu, pcbnew.VECTOR2I(pcbnew.FromMM(2.6), pcbnew.FromMM(2.59)))
+    elif lay.Contains(pcbnew.F_Paste):
+        lp = p.GetFPRelativePosition()
+        sx, sy = (1 if lp.x > 0 else -1), (1 if lp.y > 0 else -1)
+        p.SetSize(pcbnew.F_Cu, pcbnew.VECTOR2I(pcbnew.FromMM(1.2), pcbnew.FromMM(1.195)))
+        p.SetFPRelativePosition(pcbnew.VECTOR2I(pcbnew.FromMM(0.7 * sx), pcbnew.FromMM(0.6975 * sy)))
+print('U1 EP: maska 2,6 x 2,59, pasta 4 x 1,2 x 1,195 (TI PWP0014K)')
 pcbnew.SaveBoard(IME + '.kicad_pcb', b)
