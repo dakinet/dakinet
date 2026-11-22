@@ -152,15 +152,24 @@ class Drajver:
         return i0
 
     # ---- okvir
+    @staticmethod
+    def _nivoi():
+        # (HIGH, LOW) iz dokumenta -> vrednost NIVO pina (1 = 24 V, 0 = 31 V)
+        h = 0 if C.HIGH_JE_IMPULS else 1
+        return h, 1 - h
+
     def okvir(self, adresa, komanda=0):
-        s = [(1, 300), (0, C.T_RESET), (1, C.T_RESET_PAUZA)]
+        # INIT HIGH, pa za svaki bit: LOW (trajanje nosi 0/1) + HIGH marker;
+        # zatim 21 prijemni bit: LOW T_CITANJE (uredjaj odgovara strujom) + HIGH marker; na kraju LOW.
+        h, l = self._nivoi()
+        s = [(l, 300), (h, C.T_INIT)]
         for b in _bitovi(komanda, 3) + _bitovi(adresa, 7):
-            s.append((0, C.T_JEDAN if b else C.T_NULA))
-            s.append((1, C.T_BIT_PAUZA))
-        for _ in range(C.N_SYNC):
-            s.append((0, C.T_SYNC))
-            s.append((1, C.T_SYNC_PAUZA))
-        s.append((1, 500))
+            s.append((l, C.T_JEDAN if b else C.T_NULA))
+            s.append((h, C.T_MARKER))
+        for _ in range(C.N_ODGOVOR):
+            s.append((l, C.T_CITANJE))
+            s.append((h, C.T_MARKER))
+        s.append((l, 500))
         return s
 
     def _posalji(self, segmenti):
@@ -200,13 +209,13 @@ class Drajver:
         return nivo, bit
 
     @staticmethod
-    def _impulsi(nivo):
-        # impuls = niz uzoraka sa NIVO = 0 (31 V); vraca (pocetak, kraj) u uzorcima
+    def _impulsi(nivo, h=0):
+        # impuls = niz uzoraka sa NIVO = h (HIGH iz dokumenta); vraca (pocetak, kraj) u uzorcima
         r, start = [], None
         for i, n in enumerate(nivo):
-            if n == 0 and start is None:
+            if n == h and start is None:
                 start = i
-            elif n == 1 and start is not None:
+            elif n != h and start is not None:
                 r.append((start, i))
                 start = None
         return r
@@ -216,16 +225,19 @@ class Drajver:
             return {"adresa": adresa, "greska": "petlja nije ukljucena (ukljuci())"}
         i0 = self._postavi_prag()
         nivo, bit = self._posalji(self.okvir(adresa, komanda))
-        imp = self._impulsi(nivo)
-        if len(imp) < 1 + 10 + C.N_SYNC:
-            return {"adresa": adresa, "greska": "uhvaceno %d impulsa umesto %d" % (len(imp), 31 + 1)}
-        sync = imp[11:11 + C.N_SYNC]
-        d0 = C.ODGOVOR_KASNJENJE // T_UZORAK
-        d1 = (C.ODGOVOR_KASNJENJE + C.ODGOVOR_PROZOR) // T_UZORAK
+        imp = self._impulsi(nivo, self._nivoi()[0])
+        n_imp = 1 + 10 + C.N_ODGOVOR              # INIT + 10 predajnih markera + 21 prijemni marker
+        if len(imp) < n_imp:
+            return {"adresa": adresa, "greska": "uhvaceno %d impulsa umesto %d" % (len(imp), n_imp)}
+        # prijemni bit k pocinje krajem markera 10+k (poslednji predajni marker za k = 0)
+        pocetci = [kraj for _, kraj in imp[10:10 + C.N_ODGOVOR]]
+        d0 = C.ODGOVOR_POCETAK // T_UZORAK
+        d1 = (C.ODGOVOR_POCETAK + C.ODGOVOR_PROZOR) // T_UZORAK
         odg = []
-        for _, kraj in sync:
-            prozor = bit[kraj + d0:kraj + d1]
-            odg.append(1 if any(prozor) else 0)
+        for p0 in pocetci:
+            prozor = bit[p0 + d0:p0 + d1]
+            # vecina uzoraka u prozoru (dokument uzorkuje sredinu, TD + TC/2) - otporno na kratke smetnje
+            odg.append(1 if prozor and 2 * sum(prozor) >= len(prozor) else 0)
         rez = {"adresa": adresa, "komanda": komanda, "i_mirovanja_ma": round(i0, 2),
                "bitovi": "".join(str(b) for b in odg)}
         p = 0

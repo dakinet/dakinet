@@ -93,8 +93,10 @@ set T_JEDAN 650   menja vreme u RAM-u
 get               ispiše vremena okvira
 ```
 
-Vremena označena sa `?` u `config.py` nisu objavljena (širina impulsa za 0 i 1, takt, prozor odgovora).
-Izmeri ih na pravoj centrali u režimu **sniff**:
+Vremena okvira u `config.py` su preuzeta iz dokumenta o Linux drajveru za Apollo petlju
+(`docs/apollo_protokol_izvor.md`): INIT 1650 µs, bit 0 = 200 + 300 µs, bit 1 = 850 + 300 µs, prijemni bit 1700 µs,
+prozor odgovora 350–600 µs. **Nisu izmerena**: polaritet (HIGH = 31 V?), redosled bitova i polja odgovora treba
+potvrditi na pravoj centrali u režimu **sniff**:
 
 - centrala L+ → J3-1 (LOOP IN +) i dalje ka uređajima
 - centrala L− → GND pločice (J1-2), ploča napajana sa 24 V na J1

@@ -65,7 +65,8 @@ while True:
             print(a[0], "=", getattr(C, a[0]))
         elif k == "get":
             for ime in sorted(dir(C)):
-                if ime.startswith("T_") or ime.startswith("ODGOVOR") or ime in ("MSB_PRVI", "N_SYNC"):
+                if ime.startswith("T_") or ime.startswith("ODGOVOR") or ime in ("MSB_PRVI", "N_ODGOVOR",
+                                                                                 "HIGH_JE_IMPULS"):
                     print(ime, getattr(C, ime))
         else:
             print("nepoznata komanda")
