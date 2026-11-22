@@ -6,6 +6,7 @@ odgovara strujnim impulsom 10 mA. Pločica 30 × 20 mm, 2 sloja, sve SMD na gorn
 
 ```
 hardware/schematic/   šema u 2 lista (linija.svg/png, mcu.svg/png) i skripta loopnet_1in.py (schemdraw)
+hardware/3d/          index.html + loopnet_1in.wrl: interaktivni 3D prikaz (three.js); pravi ga pcb/export_3d.py
 hardware/pcb/         make_pcb.py (raspored + mreže) -> Freerouting -> finish_pcb.py -> DRC (build.sh)
                       jlc.py: Gerber zip, BOM_JLC.csv, CPL_JLC.csv; render.py: pcb_pregled.png
 firmware/             C za ATtiny1616 (avr-gcc): ln_proto.c (dekoder okvira), crt0.S, test/test_decode.py
@@ -69,6 +70,7 @@ R2 = 3k0 (+17 µA) ili ređi SKEN (500 ms). **Ništa od ovoga nije izmereno** �
   IPC-2221 B4 za 31–100 V traži 0,13 mm, izmereno najmanje 0,30 mm), vodovi linije 0,4 mm. Bakar do ivice ≥ 0,3 mm.
 - DRC (`pcbnew.WriteDRCReport`): **0 grešaka, 0 nepovezanih padova**; ostaje 31 informativna napomena
   „library '' not in configuration“ (otisci učitani skriptom, isto kao kod mastera).
+- R3/R4 (delitelj prijema) stoje uz MCU: visokoimpedantni vod LINE je 6,6 mm (ranije 32,4 mm); LED je premeštena levo.
 - Oznake komponenti su na F.Fab (na silk sloju nema mesta); natpisi na donjoj strani.
 - Tok: `cd hardware/pcb && ./build.sh && python3.12 jlc.py` (Freerouting 1.9.0 u `/tmp/claude-0/fr/fr.jar` ili `FREEROUTING_JAR`).
 
@@ -82,6 +84,5 @@ crtež sa otiskom Phoenix PT 1,5/2-3,5-H (raspon 3,5 mm, rupa 1,2 mm).
 
 ## Poznata ograničenja v0.1
 
-- Vod LINE (290 kΩ) ide od R3/R4 (levo) do PA7 preko pola ploče; u v0.2 R3/R4 premestiti uz MCU i dovesti LA/LB (niska impedansa).
 - Nema zaštite ulaza J3 od prenapona osim R10 1k i diodi pina; kabl ulaza treba da bude kratak / u istom kućištu.
 - UPDI programiranje: ili linija priključena, ili 3,3 V na J4-1 (struja unazad kroz TPS7B81 nije proverena).
