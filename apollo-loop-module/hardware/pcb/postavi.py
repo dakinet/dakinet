@@ -8,8 +8,8 @@ Pravila:
   - FIKSNO: jezgra prekidačkih napajanja sa ručno nacrtanim strujnim putevima (TI layout), izlazni stepen Q1/R13
     sa bakrom za hlađenje, letvica sa ulazom (F1, D1), TVS D3 i šant R19/R20 – oni su već po dobroj praksi
   - blokadni kondenzator je vezan za tačan pin napajanja svog IC-a (par velike težine)
-  - kristal, QSPI i USB imaju veću težinu (kratko); velike mreže (+3V3) manju; GND se ne računa (via u masu)
-  - oko RP2040 slobodan prsten 0,9 mm za izlaz vodova, oko ostalih delova 0,25 mm (prolaz za vod između delova)
+  - kristal i analogni čvorovi imaju veću težinu (kratko); velike mreže (+3V3) manju; GND se ne računa (via u masu)
+  - oko MCU (SSOP-28) slobodan prsten 0,6 mm za izlaz vodova, oko ostalih delova 0,25 mm (prolaz za vod)
 """
 import os
 import sys
@@ -24,7 +24,7 @@ import postavljac  # noqa: E402
 
 FIKSNO = {
     # boost jezgro (SW čvor, izlazna petlja, ulazni kondenzatori) – ručno nacrtani putevi
-    'U1', 'L1', 'D2', 'C36', 'C3', 'C4', 'C5', 'C2', 'C9', 'C35', 'C1',
+    'U1', 'L1', 'D2', 'C36', 'C3', 'C4', 'C5', 'C2', 'C9', 'C35',
     # buck jezgro
     'U2', 'C10', 'C37', 'C11', 'L2',
     # izlazni stepen i petlja (NE, LOOP_DRV ručno)
@@ -32,20 +32,19 @@ FIKSNO = {
     # letvica, ulaz, TVS i šant uz konektor
     'J1', 'F1', 'D1', 'D3', 'R19', 'R20',
 }
-# blokadni kondenzator -> (IC, pin napajanja)
+# blokadni kondenzator / kratka veza -> (IC, pin)   (AVR64DD28: VDD 14/20, VDDIO2 6, RESET 18, XTALHF 22/23)
 BLOKADA = {
-    'C28': ('U7', '10'), 'C29': ('U7', '33'), 'C30': ('U7', '48'), 'C31': ('U7', '1'), 'C32': ('U7', '44'),
-    'C38': ('U7', '42'), 'C39': ('U7', '43'), 'C40': ('U7', '22'), 'C33': ('U7', '50'), 'C41': ('U7', '23'),
-    'C34': ('U7', '45'), 'C25': ('U8', '8'), 'C20': ('U4', '8'), 'C21': ('U5', '5'), 'C23': ('U6', '5'),
-    'C15': ('U3', '7'), 'C12': ('L2', '2'), 'C13': ('L2', '2'), 'C26': ('Y1', '1'), 'C27': ('Y1', '3'),
+    'C25': ('U7', '14'), 'C28': ('U7', '20'), 'C29': ('U7', '6'), 'C32': ('U7', '20'),
+    'Y1': ('U7', '22'), 'R29': ('U7', '18'), 'C30': ('U7', '18'),
+    'C20': ('U4', '8'), 'C23': ('U6', '5'), 'C15': ('U3', '7'),
+    'C12': ('L2', '2'), 'C13': ('L2', '2'), 'C26': ('Y1', '1'), 'C27': ('Y1', '3'),
     'C8': ('U1', '5'), 'R2': ('U1', '9'), 'R4': ('U1', '8'), 'C7': ('U1', '8'), 'R3': ('U1', '10'),
-    'R32': ('U7', '21'), 'R33': ('U7', '47'), 'R34': ('U7', '46'),
+    'D6': ('F1', '2'), 'C1': ('D1', '1'),
 }
 TEZINA_BLOKADE = 6.0
-VAZNE = {'XIN': 3, 'XOUT': 3, 'XO': 3, 'QSCLK': 2.5, 'QSS': 2, 'QSD0': 2.5, 'QSD1': 2.5, 'QSD2': 2.5, 'QSD3': 2.5,
-         'USB_DP': 2.5, 'USB_DM': 2.5, 'BFB': 3, 'COMP': 3, 'CC': 2, 'FREQ': 2, 'SS': 2, 'FB': 2, 'VSET': 2,
-         'NA': 2, 'IAMP': 1.5, 'OC_IN': 1.5}
-PRSTEN = {'U7': 0.9, 'U8': 0.4, 'U3': 0.35, 'U4': 0.35, 'U5': 0.3, 'U6': 0.3}
+VAZNE = {'XIN': 3, 'XO': 3, 'BFB': 3, 'COMP': 3, 'CC': 2, 'FREQ': 2, 'SS': 2, 'FB': 2, 'VSET': 2,
+         'NA': 2, 'IAMP': 1.5, 'OC_IN': 1.5, 'RESET': 1.5, 'UPDI': 1.5}
+PRSTEN = {'U7': 0.6, 'U3': 0.35, 'U4': 0.35, 'U6': 0.3}
 PRSTEN_OST = 0.25
 
 
