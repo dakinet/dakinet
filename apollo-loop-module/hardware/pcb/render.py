@@ -27,7 +27,11 @@ for f in b.GetFootprints():
     ax.text(T(p.x), T(p.y) - 0.5, f.GetReference(), fontsize=8, color='k', ha='center', weight='bold')
 for t in b.GetTracks():
     if t.GetClass() == 'PCB_VIA':
-        ax.add_patch(plt.Circle((T(t.GetPosition().x), T(t.GetPosition().y)), T(t.GetWidth()) / 2, color='green', alpha=0.8))
+        try:
+            d = t.GetWidth(pcbnew.F_Cu)          # KiCad 9/10: širina via po sloju
+        except TypeError:
+            d = t.GetWidth()                     # KiCad 7
+        ax.add_patch(plt.Circle((T(t.GetPosition().x), T(t.GetPosition().y)), T(d) / 2, color='green', alpha=0.8))
 bb = b.GetBoardEdgesBoundingBox()
 ax.add_patch(plt.Rectangle((T(bb.GetLeft()), T(bb.GetTop())), T(bb.GetWidth()), T(bb.GetHeight()), fill=False, lw=1.5))
 ax.set_xlim(T(bb.GetLeft()) - 1, T(bb.GetRight()) + 1); ax.set_ylim(T(bb.GetBottom()) + 1, T(bb.GetTop()) - 1)

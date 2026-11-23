@@ -27,7 +27,7 @@ for t in [t for t in b.GetTracks() if t.GetClass() == 'PCB_TRACK' and t.GetNetna
     pts = [t.GetStart(), t.GetEnd()]
     w2 = pcbnew.ToMM(t.GetWidth()) / 2
     if any(min(pcbnew.ToMM(q.x) - X0, X1 - pcbnew.ToMM(q.x), pcbnew.ToMM(q.y) - Y0, Y1 - pcbnew.ToMM(q.y)) - w2 < 0.35 for q in pts):
-        b.Remove(t); uk += 1
+        b.Delete(t); uk += 1
 print('GND vodova uz ivicu uklonjeno:', uk)
 OKVIR = [(X0 + 0.25, Y0 + 0.25), (X1 - 0.25, Y0 + 0.25), (X1 - 0.25, Y1 - 0.25), (X0 + 0.25, Y1 - 0.25)]
 
@@ -105,9 +105,69 @@ for v in [t for t in b.GetTracks() if t.GetClass() == 'PCB_VIA' and t.GetNetname
     imaVod = any(t.GetClass() == 'PCB_TRACK' and t.GetNetname() == 'GND' and (t.GetStart() == p or t.GetEnd() == p) for t in b.GetTracks())
     naPadu = any(pd.GetNetname() == 'GND' and pd.HitTest(p) for fp in b.GetFootprints() for pd in fp.Pads())
     if not (naF and naB) and not imaVod and not naPadu:
-        b.Remove(v); ukl += 1
+        b.Delete(v); ukl += 1
 pcbnew.ZONE_FILLER(b).Fill(b.Zones())
 print('GND via za šivenje:', n, 'uklonjeno nepovezanih:', ukl)
+
+
+def ostrva_gnd():
+    """GND padovi koji nisu povezani sa najvećom grupom mase (KiCad model povezanosti)."""
+    b.BuildConnectivity()
+    c = b.GetConnectivity()
+    pads = [p for f in b.GetFootprints() for p in f.Pads() if p.GetNetname() == 'GND']
+    uid = {p.m_Uuid.AsString(): i for i, p in enumerate(pads)}
+    ostalo, grupe = set(range(len(pads))), []
+    for i, p in enumerate(pads):
+        if i not in ostalo:
+            continue
+        g = {i} | {uid[x.m_Uuid.AsString()] for x in c.GetConnectedItems(p) if x.m_Uuid.AsString() in uid}
+        ostalo -= g
+        grupe.append(g)
+    grupe.sort(key=len, reverse=True)
+    return [pads[j] for g in grupe[1:] for j in g]
+
+
+def unutra(poly, x, y, r):
+    """Tačka i krug poluprečnika r oko nje su unutar ispune (8 tačaka na obodu)."""
+    import math
+    tacke = [(x, y)] + [(x + r * math.cos(a * math.pi / 4), y + r * math.sin(a * math.pi / 4)) for a in range(8)]
+    return all(poly.Contains(pcbnew.VECTOR2I(MM(px), MM(py))) for px, py in tacke)
+
+
+# Džepovi mase zatvoreni vodovima: via unutar džepa na F i unutar glavne GND ispune na B ih spaja sa masom.
+dodato = 0
+for _ in range(6):
+    ostrva = ostrva_gnd()
+    if not ostrva:
+        break
+    zF = [z for z in b.Zones() if z.GetNetname() == 'GND' and z.GetLayer() == pcbnew.F_Cu][0]
+    zB = [z for z in b.Zones() if z.GetNetname() == 'GND' and z.GetLayer() == pcbnew.B_Cu][0]
+    fF, fB = zF.GetFilledPolysList(pcbnew.F_Cu), zB.GetFilledPolysList(pcbnew.B_Cu)
+    glavnaB = max(range(fB.OutlineCount()), key=lambda i: abs(fB.Outline(i).Area()))
+    gB = pcbnew.SHAPE_POLY_SET(fB.Outline(glavnaB))
+    for p in ostrva:
+        px, py = pcbnew.ToMM(p.GetPosition().x), pcbnew.ToMM(p.GetPosition().y)
+        dzep = next((i for i in range(fF.OutlineCount()) if fF.Outline(i).PointInside(p.GetPosition())), None)
+        if dzep is None:
+            continue
+        dF = pcbnew.SHAPE_POLY_SET(fF.Outline(dzep))
+        kand = sorted(((px + i * 0.1, py + j * 0.1) for i in range(-30, 31) for j in range(-30, 31)),
+                      key=lambda q: (q[0] - px) ** 2 + (q[1] - py) ** 2)
+        for x, y in kand:
+            if unutra(dF, x, y, 0.35) and unutra(gB, x, y, 0.35):
+                v = pcbnew.PCB_VIA(b)
+                v.SetPosition(pcbnew.VECTOR2I(MM(x), MM(y)))
+                v.SetDrill(MM(0.3)); v.SetWidth(MM(0.6))
+                v.SetLayerPair(pcbnew.F_Cu, pcbnew.B_Cu); v.SetNet(gnd)
+                b.Add(v)
+                dodato += 1
+                print('  via za džep mase: %s.%s -> (%.2f, %.2f)' % (p.GetParentFootprint().GetReference(),
+                                                                     p.GetNumber(), x, y))
+                break
+        else:
+            print('  NEMA mesta za via: %s.%s (%.2f, %.2f)' % (p.GetParentFootprint().GetReference(), p.GetNumber(), px, py))
+    pcbnew.ZONE_FILLER(b).Fill(b.Zones())
+print('via za džepove mase:', dodato, ' nepovezanih GND padova:', len(ostrva_gnd()))
 print('vodova:', len([t for t in b.GetTracks() if t.GetClass() == 'PCB_TRACK']),
       'via:', len([t for t in b.GetTracks() if t.GetClass() == 'PCB_VIA']))
 pcbnew.SaveBoard(IME + '.kicad_pcb', b)

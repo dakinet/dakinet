@@ -51,9 +51,20 @@ Odluke (sve u docstring-u `hardware/pcb/make_pcb.py`, netlista `P` je kompletna)
 - Firmver mastera (`apollo-loop-driver/firmware`, MicroPython/RP2040) NE radi na modulu – modul traži novi C firmver.
 
 Sledeći koraci:
-1. Raspored: `make_pcb.py --samo-proveri --slika` (radi i sa KiCad 10: `"C:/Program Files/KiCad/10.0/bin/python.exe"`)
-   → 0 preklapanja posle prelaska na AVR (U7 rot 270, kristal/RESET/LED u pojasu ispod, D6 uz levu ivicu).
-   Rutiranje i DRC nisu urađeni za novu verziju.
+1. **PCB 60×45 mm IZRUTIRAN (23.11.2026), DRC 0 grešaka / 0 nepovezanih** (`kicad-cli pcb drc --severity-all`).
+   `apollo_module.kicad_pcb` je SADA RUČNO DORAĐEN – `make_pcb.py` ga pravi iznova bez vodova, ne pokretati ga
+   na gotovoj ploči. Tok kojim je nastao (KiCad 10 Python, `RUTER_CPU=1`):
+   - kritične celine pomerene kao blokovi zajedno sa ručnim vodovima (PREVODI); U7 u SSOP-28; ostalo `postavi.py 120
+     --cpu --upisi` (blokada težina 15) + `razmakni.py`; R27/R18 ručno skinuti sa ručnih vodova;
+   - SS (U1 pin 5) ručno: F → via → B ispod analognog dela → via → C8; VIN od C35 pravo do C2; MASA_B boost od x 106,8;
+   - Freerouting ne uspeva (stane posle ~40 prolaza) → `rutiraj.py` (plan: redosled/širine/slojevi) – 51/52;
+     `rutiraj_dopuna.py NIVO` (rip-up manje važnih) → sve povezano;
+   - `finish_pcb.py` (GND površine, hlađenje Q1, šivenje, via za džepove mase), `spoji_dzepove.py` (GND vodovi do
+     zatvorenih džepova mase); DBG_TX i OC_RST ponovo vođeni sa `CENA_B=4` da ne seku masu; 1 viseća via uklonjena;
+   - natpisi B.Silk iz `NATPISI` u make_pcb.py.
+   Slike: `pcb_gore.png`, `pcb_dole.png` (kicad-cli 3D), `pregled_vodova.png`. Freerouting/JRE17 lokalno u
+   `C:/Users/Filip/tools/` (nije u repo-u). Ostaje: Gerber/BOM/CPL (`jlc.py` – tabela LCSC za modul), pregled B sloja
+   oko MCU (dosta signala na masi), termika Q1.
 2. `finish_pcb.py` i `jlc.py` su kopirani iz LoopNet-a: **promeniti dimenzije ploče** (OKVIR, granice 130/120 → 160/145,
    mreža šivenja 30×20 → 60×45) i tabelu LCSC u `jlc.py` (sve stavke modula).
 3. `.kicad_dru` (razmak 0,3 mm za +34V/LOOP mreže), `build.sh`, DRC bez grešaka.
