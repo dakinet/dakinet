@@ -1,5 +1,8 @@
 """Kompletna električna šema Apollo loop driver MODULA v0.1 na jednom listu.
 
+ZASTARELO (23.11.2026): crta verziju sa RP2040. Modul je prešao na AVR64DD28 + kristal 16 MHz; važeća šema je
+kicad/apollo_module.kicad_sch (generiše kicad/apollo_sema.py). Ova skripta više ne prolazi proveru prema make_pcb.py.
+
 Pokretanje:  python kompletna.py   -> kompletna.svg, kompletna.png  (+ izveštaj provere na izlazu)
 Oznake, vrednosti i pinovi se čitaju iz ../pcb/make_pcb.py (rečnik P – izvor istine za pločicu), a skripta na kraju
 iz nacrtanih žica izračuna mreže i uporedi ih sa P. Šema se ne snima ako provera nađe grešku.

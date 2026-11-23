@@ -31,28 +31,38 @@ Odluke (sve u docstring-u `hardware/pcb/make_pcb.py`, netlista `P` je kompletna)
   L1 33 µH SRN6045, D2 SS210, C3/C4 10 µF/50 V + C5 100 µF/50 V, komp. R4 2k2 + C6 100n + C7 100p, SS 47n.
 - Pinovi U1/U2 potvrđeni po datasheet-u 22.11.2026: TPS55340 SLVSBD4E (sep 2021) tabela 5-1 HTSSOP-14,
   TPS560430 SLVSE22B (jun 2018) Pin Functions DBV; X3F = fiksno 3,3 V, 1,1 MHz, FPWM (Device Comparison Table).
-  Pažnja: TPS55340 VIN/EN apsolutni max 34 V (preporučeno do 32 V), na ulazu nema TVS-a.
+  Pažnja: TPS55340 VIN/EN apsolutni max 34 V (preporučeno do 32 V) → dodat TVS **D6 SMBJ28A** na VIN_F (23.11.2026);
+  pri velikom udaru klampuje iznad 34 V – za pravu centralu razmotriti filtar/zaštitu VIN pina U1.
 - 3,3 V: **TPS560430X3FDBVR** (SOT-23-6: 1 CB, 2 GND, 3 FB=VOUT, 4 EN, 5 VIN, 6 SW), L2 15 µH SRN4018.
 - VSET iz 3,3 V (bez REF3033): R5 1k / R6 15k / R7 3k24 preko Q2 → 3,094 V (impuls) / 2,40 V (osnovni); Q3 gasi petlju.
 - Izlaz: OPA197 (×10,1: R11 91k / R12 10k) → R10 470 Ω → **MJD122** Darlington DPAK (izvor) + **MMBT5401** PNP (aktivni
   ponor za silaznu ivicu, R14 10 Ω) – push-pull; ograničenje Q4 + R13 2 Ω ≈ 325 mA; latch zaštita ≈ 285 mA (R24 13k/R25 10k).
   Termika: MJD122 ~ (34−24,2) V × I → kontinualno ≤ 150 mA bez hladnjaka, 250 mA kratkotrajno; dodati bakarnu površinu +34 V
   ispod taba (F/B + via) u `finish_pcb.py`.
-- Merenje: šant R19 1 Ω, MCP6002 ×5,02, MCP6561 sa PWM pragom – isto kao master; VLOOP/VRET delitelji.
-- RP2040: isti GPIO kao master (firmver radi bez izmena), + GP0/GP1 UART0, **GP6 = OCP** (ispravljena greška iz mastera).
-- Letvica J4 (1×8, 2,54): GND, 3V3, TX, RX, RUN, BOOT, USB D+, USB D− (za prvo snimanje MicroPython-a); J5 SWD.
+- Merenje: šant R19 1 Ω, MCP6002 ×5,02; VLOOP/VRET delitelji; hardverska zaštita U6 MCP6561 ostaje.
+- **MCU (23.11.2026): AVR64DD28-I/SO + kristal 16 MHz** umesto RP2040 (otpali U8 flash, U5 komparator BIT, R23/C22 PWM
+  prag, ~11 blokadnih C, USB). 131 → 86 elemenata. Pinovi po DS40002315A (prelim., sl. 2-1 + tab. 3-1), komentar kod U7:
+  PA2 NIVO (TCA0 WO2), PA3 EN_N, PA6 OC_RST, PD1 OCP, PD2 IAMP = AC0 AINP0 (prag interni DACREF) + ADC AIN2,
+  PD4 VLOOP, PD5 VRET, PA4/PA5 USART0 ALT1 ka matičnoj, PC0/PC1 USART1 dijagnostika, PA0/PA1 XTALHF, PA7 LED,
+  PF6 RESET (R29 10k + C30 10n), PF7 UPDI. VDDIO2 (MVIO) na 3,3 V. 2 USART-a potvrđena u tabeli 2 datasheet-a.
+  Kristal 16 MHz X322516MLB4SI, C26/C27 27p za pretpostavljeni CL 20 pF – **proveriti CL i LCSC** pre narudžbine.
+- Letvica J1 2×14: 13 RESET, 14 UPDI, 15/16 DBG_TX/DBG_RX, 17/18 GND (ranije RUN/BOOT/USB/SWD za RP2040).
+  Ažuriranje firmvera sa matične ploče: UART bootloader + UPDI kao rezerva.
+- Firmver mastera (`apollo-loop-driver/firmware`, MicroPython/RP2040) NE radi na modulu – modul traži novi C firmver.
 
 Sledeći koraci:
-1. Završiti raspored: `python3.12 make_pcb.py --samo-proveri --slika` – trenutno ~23 preklapanja (C1 van ivice, oko U4,
-   U8/C11/C25, C27/J4, C5/D2, D1/U1…). Boost petlja (U1–L1–D2–C3/C4) mora biti kratka (TI layout smernice).
+1. Raspored: `make_pcb.py --samo-proveri --slika` (radi i sa KiCad 10: `"C:/Program Files/KiCad/10.0/bin/python.exe"`)
+   → 0 preklapanja posle prelaska na AVR (U7 rot 270, kristal/RESET/LED u pojasu ispod, D6 uz levu ivicu).
+   Rutiranje i DRC nisu urađeni za novu verziju.
 2. `finish_pcb.py` i `jlc.py` su kopirani iz LoopNet-a: **promeniti dimenzije ploče** (OKVIR, granice 130/120 → 160/145,
    mreža šivenja 30×20 → 60×45) i tabelu LCSC u `jlc.py` (sve stavke modula).
 3. `.kicad_dru` (razmak 0,3 mm za +34V/LOOP mreže), `build.sh`, DRC bez grešaka.
-4. ~~Šema na jednom listu~~ GOTOVO: `apollo-loop-module/hardware/schematic/kompletna.py` (+ `alat.py`) → `.svg/.png`;
-   skripta čita `P` iz `make_pcb.py` i proverava povezanost (0 grešaka). Ostaje README, 3D.
-   KiCad šema: `apollo-loop-module/hardware/schematic/kicad/apollo_module.kicad_sch` (KiCad 10, A1), generiše
-   `apollo_sema.py` (+ `raspored.py`, `kisch.py`); netlista iz kicad-cli = P (0 grešaka), ERC 0/0.
-5. Firmver: postojeći `apollo-loop-driver/firmware` + UART komande (umesto USB REPL-a).
+4. Šema: važeća je KiCad `apollo-loop-module/hardware/schematic/kicad/apollo_module.kicad_sch` (KiCad 10, A1),
+   generiše `apollo_sema.py` (+ `raspored.py`, `kisch.py`, sopstveni simboli u `apollo.kicad_sym`: TPS55340,
+   TPS560430, AVR64DD28); netlista iz kicad-cli = P (0 grešaka), ERC 0/0. Stara schemdraw `kompletna.py` je ZASTARELA
+   (RP2040). Ostaje README, 3D.
+5. Firmver modula: novi, C (avr-gcc / DxCore): Apollo okvir po `apollo-loop-driver/docs/apollo_protokol_izvor.md`,
+   AC0 + DACREF + event → TCB za prijem, ADC, UART protokol ka matičnoj, UART bootloader.
 
 ## 4. Napomene o okruženju (cloud sesija)
 

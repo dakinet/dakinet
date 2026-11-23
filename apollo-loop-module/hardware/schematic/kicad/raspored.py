@@ -16,6 +16,19 @@ def napravi(P, lid, okreni=frozenset()):
         ('5', 'VIN', -5, 1, 0), ('4', 'EN', -5, -1, 0),
         ('1', 'CB', 5, 1, 180), ('6', 'SW', 5, 0, 180), ('3', 'FB', 5, -1, 180), ('2', 'GND', 0, -4, 90)])
 
+    s.custom['apollo:AVR64DD28-xSO'] = custom_ic('apollo:AVR64DD28-xSO', (-9, 15, 9, -15), [
+        ('14', 'VDD', -2, 16, 270), ('20', 'VDD', 0, 16, 270), ('6', 'VDDIO2', 2, 16, 270),
+        ('15', 'GND', -1, -16, 90), ('21', 'GND', 1, -16, 90),
+        ('18', 'PF6/~{RESET}', -10, 12, 0), ('19', 'PF7/UPDI', -10, 10, 0),
+        ('22', 'PA0/XTALHF1', -10, 8, 0), ('23', 'PA1/XTALHF2', -10, 5, 0),
+        ('26', 'PA4/TXD0', -10, -1, 0), ('27', 'PA5/RXD0', -10, -2, 0),
+        ('2', 'PC0/TXD1', -10, -5, 0), ('3', 'PC1/RXD1', -10, -6, 0),
+        ('16', 'PF0', -10, -9, 0), ('17', 'PF1', -10, -10, 0), ('4', 'PC2', -10, -12, 0), ('5', 'PC3', -10, -13, 0),
+        ('24', 'PA2/TCA0-WO2', 10, 12, 180), ('25', 'PA3', 10, 11, 180), ('28', 'PA6', 10, 10, 180),
+        ('7', 'PD1', 10, 9, 180), ('1', 'PA7/AC0-OUT', 10, 7, 180),
+        ('8', 'PD2/AIN2/AC0-AINP0', 10, 4, 180), ('10', 'PD4/AIN4', 10, 3, 180), ('11', 'PD5/AIN5', 10, 2, 180),
+        ('9', 'PD3', 10, 0, 180), ('12', 'PD6/DAC0', 10, -1, 180), ('13', 'PD7/VREFA', 10, -2, 180)])
+
     def part(ref, x, y, rot=0, mirror=None, unit=1, fields='r', fofs=(0, 0)):
         li, val, _ = P[ref]
         if ref in okreni:
@@ -57,7 +70,9 @@ def napravi(P, lid, okreni=frozenset()):
     w((8, yV), f1.p('1'))
     d1 = dioda_h('D1', 17, yV)
     w(f1.p('2'), d1.p('2'))
-    s.text((15, 17.5), 'D1: zastita od\nobrnutog polariteta', 1.1)
+    d6 = part('D6', 15.5, yV + 1.5, 270, fields='l', fofs=(-0.3, 0))      # K gore (VIN_F), A dole
+    s.pwr_pin(d6, '2', 'GND')
+    s.text((5, 20), 'D6 TVS SMBJ28A\n(U1 VIN/EN max 34 V)\nD1: obrnuti polaritet', 1.0)
     for ref, x in (('C1', 25), ('C2', 30), ('C9', 35), ('C35', 40)):
         vert(ref, x, yV, dole='GND')
     u1 = part('U1', 64, 30, fields=(-7, -6.4))
@@ -283,82 +298,64 @@ def napravi(P, lid, okreni=frozenset()):
                       'EN_N = 1 (R9 pull-up, i dok MCU ne krene)\n  ili OCP = 1:  VSET = 0 -> petlja ugasena\n'
                       'C14 10n: filtar VSET', 1.1)
 
-    # ================================================================ 8 RP2040
-    s.okvir(4, 88, 120, 178, '8  RP2040 + W25Q16JV + 12 MHz   (GPIO kao apollo-loop-driver;  GP0/GP1 = UART0)')
-    u7 = part('U7', 64, 134, fields=(11, -19.5))
-    ybus = u7.p('1')[1] - 4
-    for k in ('48', '43', '1', '44'):
-        w(u7.p(k), (u7.p(k)[0], ybus))
-    w((u7.p('48')[0], ybus), (u7.p('44')[0], ybus))
-    pwr((u7.p('1')[0], ybus), '+3V3')
-    s.text((u7.p('48')[0] - 9, ybus - 4), 'IOVDD 1,10,22,33,42,49 su jedan pin u simbolu\n(svi na +3V3)', 1.0)
-    ydv = ybus - 3
-    w(u7.p('45'), (u7.p('45')[0], ydv)); w(u7.p('23'), (u7.p('23')[0], ydv))
-    w((u7.p('45')[0], ydv), (u7.p('23')[0] + 16, ydv))
-    loc((u7.p('23')[0] + 1, ydv), 'DVDD')
-    for i, ref in enumerate(('C34', 'C33', 'C41')):
-        vert(ref, u7.p('23')[0] + 6 + 5 * i, ydv, dole='GND')
-    s.text((u7.p('23')[0] + 3, ydv - 3.5), 'DVDD 1,1 V iz internog LDO (VREG_VOUT)', 1.0)
-    for i, ref in enumerate(('C31', 'C28', 'C40', 'C29', 'C38', 'C30', 'C39', 'C32')):
-        vert(ref, 9 + 5 * i, 96, gore='+3V3', dole='GND')
-    s.text((7, 102.5), 'blokada uz pinove: C31 IOVDD 1, C28 IOVDD 10, C40 IOVDD 22, C29 IOVDD 33,\n'
-                       'C38 IOVDD 42, C30 USB_VDD 48 + IOVDD 49, C39 ADC_AVDD 43, C32 1u VREG_VIN 44', 1.0)
-    s.pwr_pin(u7, '57', 'GND')
-    s.pwr_pin(u7, '19', 'GND', stub=1)
-    rn = u7.p('26')
-    w(rn, (rn[0] - 8, rn[1])); lab((rn[0] - 8, rn[1]), 'RUN', 'l')
-    vert('R31', rn[0] - 4, rn[1] - 3, gore='+3V3', fields='r')
-    dm, dp = u7.p('46'), u7.p('47')
-    r34 = horiz('R34', dm[0] - 5, dm[1], fields='t')
-    w(r34.p('2'), dm); lab(r34.p('1'), 'DM_H', 'l')
-    r33 = horiz('R33', dp[0] - 11, dp[1], fields='b')
-    w(r33.p('2'), dp); lab(r33.p('1'), 'DP_H', 'l')
-    ss = u7.p('56')
-    u8 = part('U8', ss[0] - 18, ss[1] + 3, mirror='y', fields=(-1, -9.5))
-    for a, b in (('56', '1'), ('52', '6'), ('53', '5'), ('55', '2'), ('54', '3'), ('51', '7')):
-        w(u7.p(a), u8.p(b))
-    loc((ss[0] - 9, ss[1]), 'QSS', 'r')
-    s.pwr_pin(u8, '8', '+3V3')
-    s.pwr_pin(u8, '4', 'GND')
-    vert('C25', u8.p('8')[0] - 5, u8.p('8')[1], gore='+3V3', dole='GND', fields='l')
-    rq = (10, 158)
-    r29 = vert('R29', rq[0], rq[1], gore='+3V3', fields='r')
-    w(r29.p('2'), (rq[0], rq[1] + 5))
-    loc((rq[0], rq[1] + 5), 'QSS', 'l')
-    r30 = horiz('R30', rq[0], rq[1] + 5, fields='b')
-    w(r30.p('2'), (rq[0] + 5, rq[1] + 5))
-    lab((rq[0] + 5, rq[1] + 5), 'BOOT', 'r')
-    s.text((6, 168), 'QSS (flash /CS): R29 pull-up; BOOT na masu pri resetu -> USB bootloader', 1.0)
-    xi, xo_ = u7.p('20'), u7.p('21')
-    xy = xi[0] - 10
-    y1 = part('Y1', xy, (xi[1] + xo_[1]) / 2, 270, fields=(-9, 4))
-    w(xi, (xy, xi[1]), y1.p('1'))
-    r32 = horiz('R32', xo_[0] - 5, xo_[1], fields='b')
-    w(r32.p('2'), xo_)
-    w(r32.p('1'), (xy, xo_[1]), y1.p('3'))
-    loc((xy + 1, xo_[1]), 'XO')
+    # ================================================================ 8 MCU AVR64DD28
+    s.okvir(4, 88, 120, 178, '8  MCU AVR64DD28 (SOIC-28) + kristal 16 MHz   (UART0 ka maticnoj, UPDI/RESET, UART1 dijagnostika)')
+    u7 = part('U7', 40, 130, fields=(11, -16.5))
+    # napajanje: VDD 14, VDD 20, VDDIO2 6 -> +3V3; GND 15, 21
+    yb = u7.p('20')[1] - 3
+    for k in ('14', '20', '6'):
+        w(u7.p(k), (u7.p(k)[0], yb))
+    w((u7.p('14')[0], yb), (u7.p('6')[0], yb))
+    pwr((u7.p('20')[0], yb), '+3V3')
+    s.pwr_pin(u7, '15', 'GND')
+    s.pwr_pin(u7, '21', 'GND')
+    for i, ref in enumerate(('C25', 'C28', 'C29', 'C32')):
+        vert(ref, 9 + 6 * i, 96, gore='+3V3', dole='GND')
+    s.text((7, 102.5), 'blokada uz pinove (DS sl. 4-1 / 4-2): C25 VDD 14, C28 VDD 20, C29 VDDIO2 6 (MVIO = 3,3 V),\n'
+                       'C32 1u opcioni', 1.0)
+    # RESET (R29 pull-up, C30 filtar) i UPDI ka maticnoj ploci
+    rs = u7.p('18')
+    w(rs, (12, rs[1]))
+    lab((12, rs[1]), 'RESET', 'l')
+    vert('R29', 24, rs[1] - 3, gore='+3V3', fields='r')
+    vert('C30', 15, rs[1], dole='GND', fields='r')
+    s.lab_pin(u7, '19', 'UPDI', stub=2)
+    # kristal 16 MHz na XTALHF1/2
+    xi, xo_ = u7.p('22'), u7.p('23')
+    xy = xi[0] - 6
+    y1 = part('Y1', xy, (xi[1] + xo_[1]) / 2, 270, fields=(-6, 4.5))
+    w(xi, (xy - 6, xi[1]))
+    w(xo_, y1.p('3'))
     s.pwr_pin(y1, '2', 'GND')
-    w((xy, xi[1]), (xy - 5, xi[1]))
-    vert('C26', xy - 5, xi[1], dole='GND', fields='l')
+    vert('C26', xy - 6, xi[1], dole='GND', fields='l')
     vert('C27', xy + 3, xo_[1], dole='GND', fields='r')
-    lab(u7.p('24'), 'SWCLK', 'l')
-    lab(u7.p('25'), 'SWDIO', 'l')
-    sig = {'2': 'TX', '3': 'RX', '4': 'NIVO', '5': 'EN_N', '6': 'BIT', '7': 'OC_RST', '8': 'OCP',
-           '27': 'PRAG', '38': 'IAMP', '39': 'VLOOP', '40': 'VRET'}
-    for pn, ime in sig.items():
+    loc((xy + 2.5, xi[1]), 'XIN', 'r')
+    loc((xy + 4.5, xo_[1]), 'XO', 'r')
+    # UART-ovi
+    for pn, ime in (('26', 'TX'), ('27', 'RX'), ('2', 'DBG_TX'), ('3', 'DBG_RX')):
         s.lab_pin(u7, pn, ime, stub=2)
-    led = u7.p('37')
-    r35 = horiz('R35', led[0] + 2, led[1], fields='t')
+    # desna strana: upravljanje petljom i merenje
+    for pn, ime in (('24', 'NIVO'), ('25', 'EN_N'), ('28', 'OC_RST'), ('7', 'OCP'),
+                    ('8', 'IAMP'), ('10', 'VLOOP'), ('11', 'VRET')):
+        s.lab_pin(u7, pn, ime, stub=2)
+    led = u7.p('1')
+    r35 = horiz('R35', led[0] + 2, led[1], fields='b')
     w(led, r35.p('1'))
-    d5 = part('D5', r35.p('2')[0] + 3.5, led[1], 180, fields='t')
+    d5 = part('D5', r35.p('2')[0] + 3.5, led[1], 180, fields='b')
     w(r35.p('2'), d5.p('2'))
     s.pwr_pin(d5, '1', 'GND', stub=1)
     loc((r35.p('2')[0] + 1, led[1]), 'LED_A', 'd')
-    for pn in ('9', '11', '12', '13', '14', '15', '16', '17', '18', '28', '29', '30', '31', '32', '34', '35', '36', '41'):
+    for pn in ('16', '17', '4', '5', '9', '12', '13'):
         s.nc(u7, pn)
-    s.text((u7.p('2')[0] + 10, u7.p('2')[1]), 'GP0 TX / GP1 RX  -> UART0 ka hostu\nGP2 NIVO, GP3 EN_N, GP4 BIT,\n'
-                                              'GP5 OC_RST, GP6 OCP, GP16 PRAG (PWM)\nGP25 LED, ADC0 IAMP, ADC1 VLOOP,\n'
-                                              'ADC2 VRET', 1.0)
+    s.text((63, 112), 'PA2 NIVO: TCA0 WO2 (impulsi petlje, 62,5 ns korak)\n'
+                      'PD2 IAMP: AC0 AINP0, prag = interni DACREF (umesto MCP6561 + PWM)\n'
+                      '   + ADC AIN2 (struja petlje); PD4 VLOOP, PD5 VRET: ADC\n'
+                      'AC0 -> event sistem -> TCB capture: vreme odgovora uredjaja bez CPU\n'
+                      'PA4/PA5 USART0 (ALT1) ka maticnoj ploci, PC0/PC1 USART1 dijagnostika\n'
+                      'PA7 LED (moze i AC0 OUT za osciloskop)\n'
+                      'UPDI (PF7) i RESET (PF6) na J1: programiranje / bootloader sa maticne\n'
+                      'Kristal 16 MHz na PA0/PA1 (XOSCHF, FRQRANGE 16M)\n'
+                      'EN_N ima pull-up R9: petlja ugasena dok je MCU u resetu', 1.0)
 
     # ================================================================ 7 MERENJE I ZAŠTITA
     s.okvir(122, 88, 226, 140, '7  MERENJE STRUJE (sant 1 Ohm, x5,02)  I  ZASTITA SA ZADRSKOM (> ~285 mA)')
@@ -380,19 +377,8 @@ def napravi(P, lid, okreni=frozenset()):
     w((nm[0], yI + 6), r22.p('1'))
     ia = (u4a.p('1')[0] + 2, u4a.p('1')[1])
     w(u4a.p('1'), ia, (ia[0], yI + 6), r22.p('2'))
-    u5 = part('U5', 164, yI - 10, mirror='x', fields=(1, -4.8))
     xu = ia[0] + 4
-    w(ia, (xu, ia[1]), (xu, u5.p('3')[1]), u5.p('3'))
-    pf = (u5.p('4')[0] - 9, u5.p('4')[1])
-    w(u5.p('4'), pf)
-    loc((u5.p('4')[0] - 1, pf[1]), 'PRAG_F')
-    vert('C22', pf[0], pf[1], dole='GND', fields='l')
-    r23 = horiz('R23', pf[0] - 5, pf[1])
-    w(r23.p('2'), pf)
-    lab(r23.p('1'), 'PRAG', 'l')
-    s.pwr_pin(u5, '5', '+3V3')
-    s.pwr_pin(u5, '2', 'GND')
-    w(u5.p('1'), (u5.p('1')[0] + 2, u5.p('1')[1])); lab((u5.p('1')[0] + 2, u5.p('1')[1]), 'BIT')
+    w(ia, (xu, ia[1]))
     w((xu, ia[1]), (xu + 7, ia[1]))
     w((xu + 3, ia[1]), (xu + 3, ia[1] - 2)); lab((xu + 3, ia[1] - 2), 'IAMP', 'u')
     r26 = horiz('R26', xu + 7, ia[1])
@@ -429,18 +415,17 @@ def napravi(P, lid, okreni=frozenset()):
     w(d4.p('2'), (op[0], yz), op)
     loc((r27.p('2')[0] + 1, yz), 'OC_FB')
     s.text((124, 126), 'IAMP = 5,02 x I x 1 Ohm   (pojacanje 1 + R22/R21 = 1 + 40k2/10k)\n'
-                       'BIT = 1 kad IAMP > PRAG_F (PWM sa GP16, filtar R23/C22) -> prijem strujnog odgovora uredjaja\n'
+                       'Prijem odgovora uredjaja: IAMP -> AC0 u MCU (prag DACREF), vidi blok 8\n'
                        'OCP = 1 kad IAMP > OC_REF = 3,3 x 10k/23k = 1,435 V  ->  I > ~285 mA\n'
                        'D4 + R27 vracaju OCP na OC_IN -> zadrska (latch) dok MCU ne posalje OC_RST (Q7)\n'
-                       'OCP -> Q6 hardverski gasi VSET (petlju) i javlja se MCU na GP6', 1.1)
+                       'OCP -> Q6 hardverski gasi VSET (petlju) i javlja se MCU (PD1)', 1.1)
     # napajanje OP/komparatora, U4B
     u4p = part('U4', 205, 108, unit=3, fields=(-6, -0.5))
     s.pwr_pin(u4p, '8', '+3V3')
     s.pwr_pin(u4p, '4', 'GND')
     vert('C20', 210, 106, gore='+3V3', dole='GND')
-    vert('C21', 215, 106, gore='+3V3', dole='GND')
-    vert('C23', 220, 106, gore='+3V3', dole='GND')
-    s.text((200, 98), 'napajanje U4, blokada:\nC20 (U4), C21 (U5), C23 (U6)', 1.1)
+    vert('C23', 215, 106, gore='+3V3', dole='GND')
+    s.text((200, 98), 'napajanje U4, blokada:\nC20 (U4), C23 (U6)', 1.1)
     u4b = part('U4', 210, 123, unit=2, fields=(1, -4.5))
     i6, o7 = u4b.p('6'), u4b.p('7')
     w(i6, (i6[0] - 1, i6[1]), (i6[0] - 1, i6[1] + 2), (o7[0] + 1, i6[1] + 2), (o7[0] + 1, o7[1]), o7)

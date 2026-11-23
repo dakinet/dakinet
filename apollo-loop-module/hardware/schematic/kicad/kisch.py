@@ -92,7 +92,7 @@ def custom_ic(lib_id, body, pins, ref='U'):
            [S('stroke'), [S('width'), 0.254], [S('type'), S('default')]], [S('fill'), [S('type'), S('background')]]]]
     pp = [S('symbol'), name + '_1_1']
     for num, nm, x, y, a in pins:
-        typ = 'power_in' if nm in ('VIN', 'GND', 'PGND', 'AGND', 'PAD') else 'passive'
+        typ = 'power_in' if nm in ('VIN', 'GND', 'PGND', 'AGND', 'PAD', 'VDD', 'VDDIO2') else 'passive'
         pp.append([S('pin'), S(typ), S('line'), [S('at'), mm(x), mm(y), a], [S('length'), 2.54],
                    [S('name'), nm, [S('effects'), [S('font'), [S('size'), 1.27, 1.27]]]],
                    [S('number'), num, [S('effects'), [S('font'), [S('size'), 1.27, 1.27]]]]])

@@ -27,13 +27,13 @@ LIB = {
     'C1': 'Device:C_Polarized', 'C5': 'Device:C_Polarized',
     'F1': 'Device:Fuse', 'F2': 'Device:Polyfuse',
     'D1': 'Device:D_Schottky', 'D2': 'Device:D_Schottky', 'D4': 'Device:D_Schottky',
-    'D3': 'Device:D_Zener', 'D5': 'Device:LED',
+    'D3': 'Device:D_Zener', 'D6': 'Device:D_Zener', 'D5': 'Device:LED',
     'Q1': 'Transistor_BJT:Q_NPN_Darlington_BCE', 'Q4': 'Transistor_BJT:MMBT3904', 'Q5': 'Transistor_BJT:Q_PNP_BEC',
     'Q2': 'Transistor_FET:2N7002', 'Q3': 'Transistor_FET:2N7002', 'Q6': 'Transistor_FET:2N7002',
     'Q7': 'Transistor_FET:2N7002',
     'U1': 'apollo:TPS55340PWP', 'U2': 'apollo:TPS560430X3FDBV', 'U3': 'Amplifier_Operational:OPA197xD',
-    'U4': 'Amplifier_Operational:MCP6002-xSN', 'U5': 'Comparator:MCP6561-OT', 'U6': 'Comparator:MCP6561-OT',
-    'U7': 'MCU_RaspberryPi:RP2040', 'U8': 'Memory_Flash:W25Q16JVSS', 'Y1': 'Device:Crystal_GND24',
+    'U4': 'Amplifier_Operational:MCP6002-xSN', 'U6': 'Comparator:MCP6561-OT',
+    'U7': 'apollo:AVR64DD28-xSO', 'Y1': 'Device:Crystal_GND24',
     'J1': 'Connector_Generic:Conn_02x14_Odd_Even',
 }
 

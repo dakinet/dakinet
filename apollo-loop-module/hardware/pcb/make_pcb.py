@@ -2,15 +2,18 @@
 
 Kompaktna verzija apollo-loop-driver mastera za ugradnju: 24 V ulaz, boost 34 V (TPS55340), linearni
 push-pull izlaz 24,2 / 31,2 V do 250 mA (OPA197 + MJD122 + MMBT5401 za aktivno spuštanje), merenje struje
-(šant 1 Ω, MCP6002 x5,02, komparator MCP6561), hardverska zaštita sa zadrškom, RP2040, UART 3,3 V na letvici.
-GPIO raspored isti kao kod mastera (firmver apollo-loop-driver/firmware radi bez izmena pinova), plus UART0.
+(šant 1 Ω, MCP6002 x5,02), hardverska zaštita sa zadrškom (MCP6561), MCU AVR64DD28 sa kristalom 16 MHz:
+interni komparator AC0 + DACREF prima odgovor uređaja (umesto spoljnog MCP6561), ADC meri IAMP/VLOOP/VRET,
+USART0 ka matičnoj ploči, USART1 za dijagnostiku, UPDI + RESET na letvici (ažuriranje firmvera sa matične ploče).
+TVS SMBJ28A na ulazu (TPS55340 VIN/EN apsolutni max 34 V).
 
 Pokretanje:  python3.12 make_pcb.py   (KiCad 7 pcbnew)  -> apollo_module.kicad_pcb, apollo_module.dsn
 Raspored pinova proveren po datasheet-ovima (vidi ../../README.md):
   TPS55340PWP (HTSSOP-14): 1,2 SW; 3 VIN; 4 EN; 5 SS; 6 SYNC; 7 AGND; 8 COMP; 9 FB; 10 FREQ; 11 NC; 12-14 PGND; PowerPAD
   TPS560430X3F (SOT-23-6): 1 CB; 2 GND; 3 FB (=VOUT kod fiksne 3,3 V); 4 EN; 5 VIN; 6 SW
   MJD122 (DPAK): 1 B, 2/tab C, 3 E;  MMBT5401 / MMBT3904 / 2N7002 (SOT-23): 1 B/G, 2 E/S, 3 C/D
-  OPA197, MCP6002, MCP6561, RP2040, W25Q16JV: isti raspored kao u apollo-loop-driver (proveren tamo)
+  OPA197, MCP6002, MCP6561: isti raspored kao u apollo-loop-driver (proveren tamo)
+  AVR64DD28 (SOIC-28): DS40002315A (prelim.), slika 2-1 i tabela 3-1 - proveren 23.11.2026, vidi komentar kod U7
 """
 import os
 import sys
@@ -50,6 +53,7 @@ P = {
     # ---- ulaz 24 V
     'F1': (('Fuse', 'Fuse_1206_3216Metric'), '3A', {'1': '+24V_IN', '2': 'VIN_F'}),
     'D1': (DSMA, 'SS34', {'2': 'VIN_F', '1': 'VIN'}),
+    'D6': (('Diode_SMD', 'D_SMB'), 'SMBJ28A', {'1': 'VIN_F', '2': 'GND'}),   # TVS: K na VIN_F, A na GND
     'C1': (('Capacitor_SMD', 'CP_Elec_6.3x7.7'), '47u/50V', {'1': 'VIN', '2': 'GND'}),
     'C2': (C1210, '10u/50V', {'1': 'VIN', '2': 'GND'}),
     # ---- boost 34 V (TPS55340, ~580 kHz)
@@ -118,10 +122,6 @@ P = {
     'C20': (C0603, '100n', {'1': '+3V3', '2': 'GND'}),
     'R21': (R0603, '10k', {'1': 'NM', '2': 'GND'}),
     'R22': (R0603, '40k2', {'1': 'NM', '2': 'IAMP'}),
-    'U5': (SOT235, 'MCP6561T-E/OT', {'1': 'BIT', '2': 'GND', '3': 'IAMP', '4': 'PRAG_F', '5': '+3V3'}),
-    'C21': (C0603, '100n', {'1': '+3V3', '2': 'GND'}),
-    'R23': (R0603, '10k', {'1': 'PRAG', '2': 'PRAG_F'}),
-    'C22': (C0603, '1u', {'1': 'PRAG_F', '2': 'GND'}),
     # ---- zaštita od preopterećenja > ~285 mA sa zadrškom (kao kod mastera, prag 1,43 V)
     'U6': (SOT235, 'MCP6561T-E/OT', {'1': 'OCP', '2': 'GND', '3': 'OC_IN', '4': 'OC_REF', '5': '+3V3'}),
     'C23': (C0603, '100n', {'1': '+3V3', '2': 'GND'}),
@@ -134,47 +134,36 @@ P = {
     'Q6': (SOT23, '2N7002', {'1': 'OCP', '2': 'GND', '3': 'VSET'}),
     'Q7': (SOT23, '2N7002', {'1': 'OC_RST', '2': 'GND', '3': 'OC_IN'}),
     'R28': (R0603, '100k', {'1': 'OC_RST', '2': 'GND'}),
-    # ---- RP2040 (isti GPIO kao master; GP0/GP1 = UART0; OC_FLAG je sada OCP)
-    'U7': (('Package_DFN_QFN', 'QFN-56-1EP_7x7mm_P0.4mm_EP3.2x3.2mm'), 'RP2040',
-           {'1': '+3V3', '10': '+3V3', '22': '+3V3', '33': '+3V3', '42': '+3V3', '49': '+3V3',
-            '2': 'TX', '3': 'RX', '4': 'NIVO', '5': 'EN_N', '6': 'BIT', '7': 'OC_RST', '8': 'OCP',
-            '19': 'GND', '20': 'XIN', '21': 'XOUT', '23': 'DVDD', '50': 'DVDD', '45': 'DVDD',
-            '24': 'SWCLK', '25': 'SWDIO', '26': 'RUN', '27': 'PRAG', '37': 'LED', '38': 'IAMP', '39': 'VLOOP',
-            '40': 'VRET', '43': '+3V3', '44': '+3V3', '46': 'USB_DM', '47': 'USB_DP', '48': '+3V3',
-            '51': 'QSD3', '52': 'QSCLK', '53': 'QSD0', '54': 'QSD2', '55': 'QSD1', '56': 'QSS', '57': 'GND'}),
-    'U8': (('Package_SO', SOIC8W), 'W25Q16JVSS',
-           {'1': 'QSS', '2': 'QSD1', '3': 'QSD2', '4': 'GND', '5': 'QSD0', '6': 'QSCLK', '7': 'QSD3', '8': '+3V3'}),
-    'C25': (C0603, '100n', {'1': '+3V3', '2': 'GND'}),
-    'R29': (R0603, '10k', {'1': 'QSS', '2': '+3V3'}),
-    'R30': (R0603, '1k', {'1': 'QSS', '2': 'BOOT'}),
-    'R31': (R0603, '10k', {'1': 'RUN', '2': '+3V3'}),
-    'Y1': (('Crystal', 'Crystal_SMD_3225-4Pin_3.2x2.5mm'), '12MHz ABM8-272-T3', {'1': 'XIN', '2': 'GND', '3': 'XO', '4': 'GND'}),
-    'R32': (R0603, '1k', {'1': 'XOUT', '2': 'XO'}),
-    'C26': (C0603, '15p', {'1': 'XIN', '2': 'GND'}),
-    'C27': (C0603, '15p', {'1': 'XO', '2': 'GND'}),
-    'C28': (C0402, '100n', {'1': '+3V3', '2': 'GND'}),       # IOVDD pin 10
-    'C29': (C0402, '100n', {'1': '+3V3', '2': 'GND'}),       # IOVDD pin 33
-    'C30': (C0402, '100n', {'1': '+3V3', '2': 'GND'}),       # USB_VDD 48 + IOVDD 49
-    'C31': (C0402, '100n', {'1': '+3V3', '2': 'GND'}),       # IOVDD pin 1
-    'C32': (C0402, '1u', {'1': '+3V3', '2': 'GND'}),         # VREG_VIN pin 44 (datasheet 2.10)
-    'C38': (C0402, '100n', {'1': '+3V3', '2': 'GND'}),       # IOVDD pin 42
-    'C39': (C0402, '100n', {'1': '+3V3', '2': 'GND'}),       # ADC_AVDD pin 43
-    'C40': (C0402, '100n', {'1': '+3V3', '2': 'GND'}),       # IOVDD pin 22
-    'C33': (C0402, '100n', {'1': 'DVDD', '2': 'GND'}),       # DVDD pin 50
-    'C41': (C0402, '100n', {'1': 'DVDD', '2': 'GND'}),       # DVDD pin 23
-    'C34': (C0402, '1u', {'1': 'DVDD', '2': 'GND'}),         # VREG_VOUT pin 45, tik uz pin
-    'R33': (R0603, '27', {'1': 'USB_DP', '2': 'DP_H'}),
-    'R34': (R0603, '27', {'1': 'USB_DM', '2': 'DM_H'}),
+    # ---- MCU AVR64DD28-I/SO (SOIC-28), kristal 16 MHz. Pinovi po DS40002315A (prelim.), slika 2-1 + tabela 3-1:
+    #  1 PA7 LED (alt: AC0 OUT za osciloskop) | 2 PC0 DBG_TX, 3 PC1 DBG_RX (USART1 default) | 6 VDDIO2 = 3V3
+    #  7 PD1 OCP (ulaz) | 8 PD2 IAMP = AC0 AINP0 (prag DACREF) i ADC AIN2 | 10 PD4 VLOOP AIN4 | 11 PD5 VRET AIN5
+    #  14, 20 VDD | 15, 21 GND | 18 PF6 RESET | 19 PF7 UPDI | 22/23 PA0/PA1 XTALHF1/2
+    #  24 PA2 NIVO (TCA0 WO2 / TCB0 WO) | 25 PA3 EN_N | 26/27 PA4/PA5 TX/RX (USART0 ALT1) | 28 PA6 OC_RST
+    #  slobodni (NC): 4 PC2, 5 PC3, 9 PD3, 12 PD6 (DAC OUT), 13 PD7 (VREFA), 16 PF0, 17 PF1
+    'U7': (('Package_SO', 'SOIC-28W_7.5x17.9mm_P1.27mm'), 'AVR64DD28-I/SO',
+           {'1': 'LED', '2': 'DBG_TX', '3': 'DBG_RX', '6': '+3V3', '7': 'OCP', '8': 'IAMP', '10': 'VLOOP',
+            '11': 'VRET', '14': '+3V3', '15': 'GND', '18': 'RESET', '19': 'UPDI', '20': '+3V3', '21': 'GND',
+            '22': 'XIN', '23': 'XO', '24': 'NIVO', '25': 'EN_N', '26': 'TX', '27': 'RX', '28': 'OC_RST'}),
+    'C25': (C0603, '100n', {'1': '+3V3', '2': 'GND'}),       # VDD pin 14 (DS sl. 4-1, C1)
+    'C28': (C0603, '100n', {'1': '+3V3', '2': 'GND'}),       # VDD pin 20
+    'C29': (C0603, '100n', {'1': '+3V3', '2': 'GND'}),       # VDDIO2 pin 6 (DS sl. 4-2)
+    'C32': (C0603, '1u', {'1': '+3V3', '2': 'GND'}),         # opcioni C3 iz sl. 4-1
+    'Y1': (('Crystal', 'Crystal_SMD_3225-4Pin_3.2x2.5mm'), '16MHz X322516MLB4SI',
+           {'1': 'XIN', '2': 'GND', '3': 'XO', '4': 'GND'}),
+    'C26': (C0603, '27p', {'1': 'XIN', '2': 'GND'}),         # za CL 20 pF: 2 x (20 - ~5 pF parazitno); proveriti
+    'C27': (C0603, '27p', {'1': 'XO', '2': 'GND'}),
+    'R29': (R0603, '10k', {'1': 'RESET', '2': '+3V3'}),      # interni pull-up postoji; spoljni zbog voda ka MB
+    'C30': (C0603, '10n', {'1': 'RESET', '2': 'GND'}),
     'R35': (R0603, '1k', {'1': 'LED', '2': 'LED_A'}),
     'D5': (('LED_SMD', 'LED_0603_1608Metric'), 'LED', {'1': 'GND', '2': 'LED_A'}),
     # ---- J1: letvica 2x14 / 2,54 mm sa DONJE strane – modul se utiče u matičnu ploču (sve spoljne veze)
     #  pinovi (neparni red / parni red), s leva na desno, prate blokove iznad letvice:
-    #  24V x2 (ulaz F1/D1) | GND x2 | 3V3,GND | TX,RX | RUN,BOOT | D+,D- | SWCLK,SWDIO (MCU) |
+    #  24V x2 (ulaz F1/D1) | GND x2 | 3V3,GND | TX,RX | RESET,UPDI | DBG_TX,DBG_RX | GND,GND |
     #  GND | ISENSE (ispod šanta R19) | LOOP_IN | LOOP_OUT (uz TVS D3) | GND
     'J1': (('Connector_PinHeader_2.54mm', 'PinHeader_2x14_P2.54mm_Vertical'), 'MATICNA 2x14',
            {'1': '+24V_IN', '2': '+24V_IN', '3': '+24V_IN', '4': '+24V_IN', '5': 'GND', '6': 'GND', '7': 'GND', '8': 'GND',
-            '9': '+3V3', '10': 'GND', '11': 'TX', '12': 'RX', '13': 'RUN', '14': 'BOOT', '15': 'DP_H', '16': 'DM_H',
-            '17': 'SWCLK', '18': 'SWDIO', '19': 'GND', '20': 'GND', '21': 'ISENSE', '22': 'ISENSE',
+            '9': '+3V3', '10': 'GND', '11': 'TX', '12': 'RX', '13': 'RESET', '14': 'UPDI', '15': 'DBG_TX', '16': 'DBG_RX',
+            '17': 'GND', '18': 'GND', '19': 'GND', '20': 'GND', '21': 'ISENSE', '22': 'ISENSE',
             '23': 'LOOP_IN', '24': 'LOOP_IN', '25': 'LOOP_OUT', '26': 'LOOP_OUT', '27': 'GND', '28': 'GND'}),
 }
 
@@ -201,25 +190,33 @@ POZ = {
     'F2': (166.8, 125, 270), 'D3': (157, 142, 0), 'R15': (154.3, 129.8, 270), 'R16': (156.45, 132.6, 270), 'C17': (156.35, 129.05, 90),  'R17': (147.25, 142, 0), 'R18': (153.6, 132.6, 0), 'C18': (150.8, 134.8, 90),
     # merenje i zaštita
     'R19': (146, 138.95, 0), 'R20': (142, 135.6, 0), 'C19': (142.55, 133, 90), 'U4': (146.7, 132, 90), 'C20': (141.8, 129.7, 180),
-    'R21': (145.25, 126.9, 180), 'R22': (150.8, 131.25, 270), 'U5': (136.3, 138.45, 0), 'C21': (138.25, 135.35, 0), 'R23': (134.55, 133.3, 0),
-    'C22': (137.35, 132.55, 90), 'U6': (131.45, 138.45, 180), 'C23': (128, 138.5, 90), 'R24': (134.4, 141.55, 180), 'R25': (134.45, 135.35, 0),
+    'R21': (145.25, 126.9, 180), 'R22': (150.8, 131.25, 270), 
+    'U6': (131.45, 138.45, 180), 'C23': (128, 138.5, 90), 'R24': (134.4, 141.55, 180), 'R25': (134.45, 135.35, 0),
     'R26': (151.7, 138.25, 0), 'C24': (152.85, 135.45, 90), 'D4': (139.95, 138.5, 90), 'R27': (139.15, 141.5, 180), 'Q6': (139.45, 125.45, 90),
     'Q7': (130.1, 134.4, 0), 'R28': (130.05, 141.55, 0),
-    # RP2040
-    'U7': (119.75, 133.15, 0), 'U8': (111.3, 131.45, 270), 'C25': (111.5, 138.35, 270), 'R29': (106.2, 131.8, 180), 'R30': (109.45, 138.35, 270),
-    'R31': (122.35, 140.75, 180), 'Y1': (116.05, 142.35, 0), 'R32': (119.55, 140.2, 270), 'C26': (111.9, 142.95, 180), 'C27': (114.3, 139.25, 180),
-    'C28': (117.75, 127.3, 0), 'C29': (126.05, 134.2, 0), 'C30': (118.95, 125.35, 90), 'C31': (115.65, 126.85, 90), 'C32': (122.8, 125.25, 0),
-    'C33': (117.4, 125.35, 90), 'C34': (120.75, 124.8, 90),
-    'R33': (121.5, 127, 0), 'R34': (126.6, 129.65, 0), 'R35': (106.95, 134.6, 270), 'D5': (104.9, 136.2, 90),
+    # MCU AVR64DD28 (grubo – raspored u toku)
+    
+    
+    
+    
     'C36': (124.1, 115.35, 180),
     'C35': (117.4, 108.3, 270),
     'C37': (104, 126.55, 180),
-    'C38': (125.6, 131.85, 270),
-    'C39': (124.45, 127.3, 0),
-    'C40': (121.8, 138.95, 0),
-    'C41': (117.3, 139, 180),
+    
+    
+    
+    
     # letvica 2x14 (donja strana), simetrično na sredini donje ivice: pinovi x 113,49..146,51; neparni red y=140,6
     'J1': (118.49, 145.6, 90),
+    # U7 rot 270: pinovi 1-14 gornji red (y 128,35; x 124,25 -> 107,75), 15-28 donji red (y 137,65; x 107,75 -> 124,25)
+    'U7': (116, 133, 270),
+    'Y1': (117.3, 141.3, 0), 'C26': (114.2, 141.3, 90), 'C27': (120.4, 141.3, 90),   # XIN 22 / XO 23 dole
+    'C28': (112.3, 141.3, 90),                                                       # VDD 20 / GND 21
+    'R29': (110.4, 141.3, 90), 'C30': (108.5, 141.3, 90),                             # RESET 18
+    'R35': (122.5, 141.3, 90), 'D5': (124.5, 141.3, 90),                              # LED (pin 1 gore desno)
+    'C25': (104.8, 133.2, 90),                                                       # VDD 14 / GND 15 levo
+    'C29': (118.5, 125.2, 0), 'C32': (121.8, 125.2, 0),                              # VDDIO2 6 gore
+    'D6': (103, 145.5, 90),                                                          # TVS uz levu ivicu
 }
 
 KLASE = [
@@ -228,20 +225,19 @@ KLASE = [
     ('buck', ['SW3'], 500, 250),
     ('petlja', ['+34V', 'NE', 'LOOP_DRV', 'LOOP_OUT', 'ISENSE', 'LOOP_IN', 'PE'], 600, 300),
     ('hv', ['NB', 'U3OUT'], 300, 300),
-    ('logika3v3', ['+3V3', 'DVDD'], 250, 150),  # RP2040 QFN korak 0,4 mm
+    ('logika3v3', ['+3V3'], 250, 150),
 ]
 
 BLOKOVI = [
-    ('1 ULAZ 24V', ['F1', 'D1']),
+    ('1 ULAZ 24V', ['F1', 'D1', 'D6']),
     ('2 BOOST 34V', ['C1', 'C2', 'U1', 'L1', 'D2', 'C3', 'C4', 'C5', 'R1', 'R2', 'R3', 'R4', 'C6', 'C7', 'C8', 'C9', 'C35', 'C36']),
     ('3 BUCK 3V3', ['U2', 'C10', 'L2', 'C11', 'C12', 'C13', 'C37']),
     ('4 VSET', ['R5', 'R6', 'C14', 'R7', 'Q2', 'R8', 'Q3', 'R9']),
     ('5 IZLAZ 24/31V', ['U3', 'C15', 'R10', 'R11', 'C16', 'R12', 'Q1', 'R13', 'Q4', 'Q5', 'R14']),
     ('6 PETLJA', ['F2', 'R15', 'R16', 'C17', 'R17', 'R18', 'C18']),
-    ('7 MERENJE I ZASTITA', ['R19', 'R20', 'C19', 'U4', 'C20', 'R21', 'R22', 'U5', 'C21', 'R23', 'C22',
+    ('7 MERENJE I ZASTITA', ['R19', 'R20', 'C19', 'U4', 'C20', 'R21', 'R22',
                              'U6', 'C23', 'R24', 'R25', 'R26', 'C24', 'D4', 'R27', 'Q6', 'Q7', 'R28']),
-    ('8 RP2040', ['U7', 'U8', 'C25', 'R29', 'R30', 'R31', 'Y1', 'R32', 'C26', 'C27', 'C28', 'C29', 'C30',
-                  'C31', 'C32', 'C33', 'C34', 'C38', 'C39', 'C40', 'C41', 'R33', 'R34', 'R35', 'D5']),
+    ('8 MCU AVR64DD28', ['U7', 'C25', 'C28', 'C29', 'C32', 'Y1', 'C26', 'C27', 'R29', 'C30', 'R35', 'D5']),
     ('9 LETVICA 2x14 (DOLE)', ['J1', 'D3']),
 ]
 
