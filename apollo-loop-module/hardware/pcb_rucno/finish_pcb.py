@@ -27,7 +27,7 @@ for t in [t for t in b.GetTracks() if t.GetClass() == 'PCB_TRACK' and t.GetNetna
     pts = [t.GetStart(), t.GetEnd()]
     w2 = pcbnew.ToMM(t.GetWidth()) / 2
     if any(min(pcbnew.ToMM(q.x) - X0, X1 - pcbnew.ToMM(q.x), pcbnew.ToMM(q.y) - Y0, Y1 - pcbnew.ToMM(q.y)) - w2 < 0.35 for q in pts):
-        b.Remove(t); uk += 1
+        b.Delete(t); uk += 1
 print('GND vodova uz ivicu uklonjeno:', uk)
 OKVIR = [(X0 + 0.25, Y0 + 0.25), (X1 - 0.25, Y0 + 0.25), (X1 - 0.25, Y1 - 0.25), (X0 + 0.25, Y1 - 0.25)]
 
@@ -113,7 +113,7 @@ for v in [t for t in b.GetTracks() if t.GetClass() == 'PCB_VIA' and t.GetNetname
     imaVod = any(t.GetClass() == 'PCB_TRACK' and t.GetNetname() == 'GND' and (t.GetStart() == p or t.GetEnd() == p) for t in b.GetTracks())
     naPadu = any(pd.GetNetname() == 'GND' and pd.HitTest(p) for fp in b.GetFootprints() for pd in fp.Pads())
     if not (naF and naB) and not imaVod and not naPadu:
-        b.Remove(v); ukl += 1
+        b.Delete(v); ukl += 1
 pcbnew.ZONE_FILLER(b).Fill(b.Zones())
 # ostrva: svaki deo GND površine bez via dobija via (ako ima slobodno mesto), pa ponovo izlivanje
 ostrva = 0

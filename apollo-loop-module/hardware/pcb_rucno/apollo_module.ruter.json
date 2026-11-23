@@ -1,0 +1,124 @@
+{
+ "opis": "Pravila rutiranja za ruter-gpu MCP (iz KLASE u make_pcb.py + VISOKI iz rucno_alat.py)",
+ "podrazumevano": {
+  "sirina": 0.2,
+  "razmak": 0.15
+ },
+ "visoki_napon": [
+  "+34V",
+  "LOOP_DRV",
+  "LOOP_IN",
+  "LOOP_OUT",
+  "NB",
+  "NE",
+  "PE",
+  "SW",
+  "U3OUT"
+ ],
+ "visoki_razmak": 0.3,
+ "ivica": 0.3,
+ "mreze": {
+  "+24V_IN": {
+   "sirina": 0.8,
+   "razmak": 0.3,
+   "prioritet": 1,
+   "klasa": "boost"
+  },
+  "VIN_F": {
+   "sirina": 0.8,
+   "razmak": 0.3,
+   "prioritet": 1,
+   "klasa": "boost"
+  },
+  "SW": {
+   "sirina": 0.8,
+   "razmak": 0.3,
+   "prioritet": 1,
+   "klasa": "boost"
+  },
+  "VIN": {
+   "sirina": 0.6,
+   "razmak": 0.2,
+   "prioritet": 2,
+   "klasa": "vin"
+  },
+  "SW3": {
+   "sirina": 0.5,
+   "razmak": 0.25,
+   "prioritet": 1,
+   "klasa": "buck"
+  },
+  "+34V": {
+   "sirina": 0.6,
+   "razmak": 0.3,
+   "prioritet": 2,
+   "klasa": "petlja"
+  },
+  "NE": {
+   "sirina": 0.6,
+   "razmak": 0.3,
+   "prioritet": 2,
+   "klasa": "petlja"
+  },
+  "LOOP_DRV": {
+   "sirina": 0.6,
+   "razmak": 0.3,
+   "prioritet": 2,
+   "klasa": "petlja"
+  },
+  "LOOP_OUT": {
+   "sirina": 0.6,
+   "razmak": 0.3,
+   "prioritet": 2,
+   "klasa": "petlja"
+  },
+  "ISENSE": {
+   "sirina": 0.6,
+   "razmak": 0.3,
+   "prioritet": 2,
+   "klasa": "petlja"
+  },
+  "LOOP_IN": {
+   "sirina": 0.6,
+   "razmak": 0.3,
+   "prioritet": 2,
+   "klasa": "petlja"
+  },
+  "PE": {
+   "sirina": 0.6,
+   "razmak": 0.3,
+   "prioritet": 2,
+   "klasa": "petlja"
+  },
+  "NB": {
+   "sirina": 0.3,
+   "razmak": 0.3,
+   "prioritet": 3,
+   "klasa": "hv"
+  },
+  "U3OUT": {
+   "sirina": 0.3,
+   "razmak": 0.3,
+   "prioritet": 3,
+   "klasa": "hv"
+  },
+  "+3V3": {
+   "sirina": 0.25,
+   "razmak": 0.15,
+   "prioritet": 3,
+   "klasa": "logika3v3"
+  },
+  "DVDD": {
+   "sirina": 0.2,
+   "razmak": 0.15,
+   "prioritet": 3,
+   "klasa": "jezgro"
+  },
+  "GND": {
+   "sirina": 0.3,
+   "razmak": 0.15,
+   "prioritet": 4,
+   "klasa": "masa"
+  }
+ }
+}
